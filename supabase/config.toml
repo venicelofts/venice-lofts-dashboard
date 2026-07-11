@@ -1,0 +1,10 @@
+# Minimal Supabase config for local migration files.
+# Project ref: qdsltkyziufnwvtsvahc
+
+project_id = "qdsltkyziufnwvtsvahc"
+
+[api]
+enabled = true
+
+[db]
+major_version = 15

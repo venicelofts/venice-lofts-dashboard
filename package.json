@@ -1,0 +1,43 @@
+{
+ "name": "itinerary-dashboard",
+ "version": "0.1.0",
+ "private": true,
+ "scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint",
+  "scan": "tsx scripts/scan.ts",
+  "db:migrate": "tsx scripts/apply-migration.ts"
+ },
+ "dependencies": {
+  "@anthropic-ai/sdk": "^0.111.0",
+  "@supabase/ssr": "^0.12.0",
+  "@supabase/supabase-js": "^2.110.2",
+  "date-fns": "^4.4.0",
+  "imapflow": "^1.4.7",
+  "mailparser": "^3.9.14",
+  "next": "16.2.10",
+  "pdf-parse": "^2.4.5",
+  "pg": "^8.22.0",
+  "react": "19.2.4",
+  "react-dom": "19.2.4",
+  "zod": "^4.4.3"
+ },
+ "devDependencies": {
+  "@tailwindcss/postcss": "^4",
+  "@types/mailparser": "^3.4.6",
+  "@types/node": "^20",
+  "@types/pg": "^8.20.0",
+  "@types/react": "^19",
+  "@types/react-dom": "^19",
+  "dotenv": "^17.4.2",
+  "eslint": "^9",
+  "eslint-config-next": "16.2.10",
+  "supabase": "^2.109.1",
+  "tailwindcss": "^4",
+  "tsx": "^4.23.0",
+  "typescript": "^5"
+ },
+ "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
+}
