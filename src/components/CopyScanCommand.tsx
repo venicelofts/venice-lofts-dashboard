@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export function CopyScanCommand() {
   const [copied, setCopied] = useState(false);
-  const command = "cd ~/Developer/itinerary-dashboard && pnpm scan";
+  const command = "cd ~/Developer/venice-lofts && pnpm scan";
 
   async function copy() {
     await navigator.clipboard.writeText(command);

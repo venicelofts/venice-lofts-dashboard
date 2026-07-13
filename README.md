@@ -1,4 +1,4 @@
-# Itinerary Dashboard
+# Venice Lofts
 
 Local-scan + Supabase dashboard for turning emails and PDFs into schedules and itineraries.
 
@@ -52,8 +52,8 @@ See **SETUP.md** for a full configuration checklist.
 6. **Morning automation**
 
    ```bash
-   cp launchd/com.itinerary.scan.plist ~/Library/LaunchAgents/
-   launchctl load ~/Library/LaunchAgents/com.itinerary.scan.plist
+   cp launchd/com.venicelofts.scan.plist ~/Library/LaunchAgents/
+   launchctl load ~/Library/LaunchAgents/com.venicelofts.scan.plist
    ```
 
 ## Privacy

@@ -1,6 +1,6 @@
 # Configuration checklist
 
-Step-by-step setup for the Itinerary Dashboard after the repo is cloned and dependencies are installed.
+Step-by-step setup for Venice Lofts after the repo is cloned and dependencies are installed.
 
 ## 1. Database (one-time)
 
@@ -49,7 +49,7 @@ See [`.env.example`](.env.example) for the full template.
 - [ ] Start the app:
 
   ```bash
-  cd ~/Developer/itinerary-dashboard
+  cd ~/Developer/venice-lofts
   pnpm dev
   ```
 
@@ -78,7 +78,7 @@ See [`.env.example`](.env.example) for the full template.
   ./scripts/install-launchd.sh
   ```
 
-- [ ] Confirm logs at `~/Library/Logs/itinerary-scan.log`
+- [ ] Confirm logs at `~/Library/Logs/venice-lofts-scan.log`
 - [ ] Note: your Mac must be awake around 7:00 for the scheduled scan to run
 
 ## 7. Security (recommended)

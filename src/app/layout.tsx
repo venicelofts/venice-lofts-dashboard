@@ -15,8 +15,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Itinerary Dashboard",
-  description: "Local-scan itinerary dashboard powered by Supabase",
+  title: "Venice Lofts",
+  description: "Local-scan schedule dashboard for Venice Lofts powered by Supabase",
 };
 
 export default function RootLayout({

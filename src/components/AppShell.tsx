@@ -37,7 +37,7 @@ export function AppShell({
             Internal tool
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            Itinerary Dashboard
+            Venice Lofts
           </h1>
         </div>
         <div className="flex items-center gap-3 text-sm text-[var(--text-muted)]">

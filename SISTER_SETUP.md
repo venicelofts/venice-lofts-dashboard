@@ -1,6 +1,6 @@
 # Setup on another Mac (e.g. your sister)
 
-Use this guide when installing the Itinerary Dashboard on **someone else’s computer**. Each person needs:
+Use this guide when installing Venice Lofts on **someone else’s computer**. Each person needs:
 
 1. **The dashboard** — view schedule in the browser
 2. **The local scanner** — reads their email/PDFs and uploads extracted events to Supabase
@@ -48,8 +48,8 @@ corepack enable
 ## 1. Get the code
 
 ```bash
-git clone <your-repo-url> ~/Developer/itinerary-dashboard
-cd ~/Developer/itinerary-dashboard
+git clone <your-repo-url> ~/Developer/venice-lofts
+cd ~/Developer/venice-lofts
 pnpm install
 ```
 
@@ -127,15 +127,15 @@ At **7:00 AM** local time, macOS `launchd` can run `pnpm scan` automatically.
 
 ### Fix paths first (important)
 
-The plist in `launchd/com.itinerary.scan.plist` may still point at **your** username and paths. On her Mac, edit it **before** installing:
+The plist in `launchd/com.venicelofts.scan.plist` may still point at **your** username and paths. On her Mac, edit it **before** installing:
 
-1. **Project path** — e.g. `/Users/jane/Developer/itinerary-dashboard`
+1. **Project path** — e.g. `/Users/jane/Developer/venice-lofts`
 2. **pnpm path** — on her Mac run `which pnpm` and use that full path in `ProgramArguments`
 
 Example command inside the plist:
 
 ```xml
-<string>cd /Users/jane/Developer/itinerary-dashboard &amp;&amp; /path/from/which/pnpm scan</string>
+<string>cd /Users/jane/Developer/venice-lofts &amp;&amp; /path/from/which/pnpm scan</string>
 ```
 
 ### Install the job
@@ -147,8 +147,8 @@ chmod +x scripts/install-launchd.sh
 
 ### Logs
 
-- `~/Library/Logs/itinerary-scan.log`
-- `~/Library/Logs/itinerary-scan.err.log`
+- `~/Library/Logs/venice-lofts-scan.log`
+- `~/Library/Logs/venice-lofts-scan.err.log`
 
 ### Notes
 

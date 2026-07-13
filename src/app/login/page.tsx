@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-6 shadow-lg">
         <p className="font-mono text-xs tracking-[0.18em] text-[var(--text-muted)] uppercase">
-          Itinerary Dashboard
+          Venice Lofts
         </p>
         <h1 className="mt-2 text-2xl font-semibold">Sign in</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
