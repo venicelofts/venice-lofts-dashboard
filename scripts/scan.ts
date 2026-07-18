@@ -1,5 +1,6 @@
 import { config as loadEnv } from 'dotenv'
 import path from 'node:path'
+import { logScanErrors } from '../src/lib/scan/errors'
 import { scanFolders } from '../src/lib/scan/folders'
 import { scanEmail, isImapConfigured } from '../src/lib/scan/email'
 import { createServiceClient } from '../src/lib/scan/persist'
@@ -47,6 +48,7 @@ async function main() {
    console.log(`Scanning folders: ${folders.join(', ')}`)
    aggregate.folders = await scanFolders(userId, folders)
    console.log('Folder scan:', aggregate.folders)
+   logScanErrors('Folder scan', aggregate.folders.errors)
   } else {
    console.log('No SCAN_FOLDERS configured — skipping folder scan')
   }
@@ -55,6 +57,7 @@ async function main() {
    console.log('Scanning IMAP inbox…')
    aggregate.email = await scanEmail(userId)
    console.log('Email scan:', aggregate.email)
+   logScanErrors('Email scan', aggregate.email.errors)
   } else {
    console.log('IMAP not configured — skipping email scan')
   }

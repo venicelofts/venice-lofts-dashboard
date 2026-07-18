@@ -1,61 +1,50 @@
 # Venice Lofts
 
-Local-scan + Supabase dashboard for turning emails and PDFs into schedules and itineraries.
+Org-scoped ops dashboard for Venice Lofts: Outlook mail and calendar → AI thread summaries and nested tasks → a prioritized daily workflow.
+
+## What it does (MVP)
+
+1. Connect Lofts Outlook inboxes read-only (Microsoft Graph; admin configures all mailboxes)
+2. Deduplicate the same message across mailboxes by `internetMessageId` into one parent thread
+3. Use Claude to summarize threads and create nested action items
+4. Assign, prioritize, date, note, complete, close, and archive tasks (assignees = employee users only)
+5. Ops home: Focus First, Needs Attention, Today/Week Ahead, Upcoming Events, Email Tasks, Pipeline, Done Today
+6. Read Outlook calendar; create simple manual events with required loft space and overlap warnings
+7. Keep a basic activity history
+
+**Out of scope for MVP:** invoices, documents, WhatsApp, DocSend, departmental checklists, detailed Event pages, Ownership/Team views, employee self-serve mailbox OAuth, weather, automatic daily recap, and file/PDF scanning.
+
+Legacy Trips / itinerary views may remain as secondary navigation until cleaned up.
 
 ## Stack
 
-- Next.js (App Router) dashboard with Supabase Auth + Realtime
-- Local `pnpm scan` agent (folders + IMAP → Claude → Supabase)
-- macOS `launchd` morning job at 7:00
+- Next.js (App Router) + Supabase Auth (Microsoft) + Postgres RLS
+- Microsoft Graph (application permissions) for mail + calendar sync
+- Claude (Anthropic) for thread summary and nested tasks
+- Server-side scheduled sync (not a per-Mac local scanner)
 
 ## Setup
 
-- **[SETUP.md](SETUP.md)** — configure on your machine
-- **[SISTER_SETUP.md](SISTER_SETUP.md)** — install on another Mac (e.g. family member)
+Documentation lives in **[docs/](docs/README.md)**:
 
-See **SETUP.md** for a full configuration checklist.
+1. **[Initial setup](docs/initial-setup.md)** — clone, database, `.env.local`, `pnpm dev`
+2. **[Azure configuration](docs/azure.md)** — Microsoft sign-in; Graph sync (future)
+3. **[First scan](docs/first-scan.md)** — run `pnpm scan` on your Mac
 
-1. **Apply the schema** (one-time)
+Also: **[Employee setup](docs/employee-setup.md)** — dashboard access without scanner secrets.
 
-   Either paste [`supabase/migrations/20260711143000_itinerary_schema.sql`](supabase/migrations/20260711143000_itinerary_schema.sql) into the [SQL Editor](https://supabase.com/dashboard/project/qdsltkyziufnwvtsvahc/sql/new), **or** set `DATABASE_URL` in `.env.local` and run:
+```bash
+pnpm install
+cp .env.example .env.local   # fill in secrets
+pnpm db:migrate              # or run SQL in Supabase
+pnpm dev
+```
 
-   ```bash
-   pnpm db:migrate
-   ```
+See **[docs/](docs/README.md)** for the full walkthrough.
 
-2. **Env**
+## Privacy and security
 
-   Copy `.env.example` → `.env.local` (already seeded for this project). Set:
-   - `ANTHROPIC_API_KEY`
-   - `SCAN_FOLDERS` — comma-separated absolute paths
-   - Optional IMAP: `IMAP_HOST`, `IMAP_USER`, `IMAP_PASS`
-   - `SCAN_USER_ID` — after first login, copy from **Settings**
-
-3. **Auth**
-
-   In Supabase Auth settings, add redirect URL:
-
-   `http://localhost:3000/auth/callback`
-
-4. **Run dashboard**
-
-   ```bash
-   pnpm dev
-   ```
-
-5. **Run scanner**
-
-   ```bash
-   pnpm scan
-   ```
-
-6. **Morning automation**
-
-   ```bash
-   cp launchd/com.venicelofts.scan.plist ~/Library/LaunchAgents/
-   launchctl load ~/Library/LaunchAgents/com.venicelofts.scan.plist
-   ```
-
-## Privacy
-
-Raw emails/PDFs stay on the Mac. Extracted structured events and short excerpts are stored in Supabase. Text sent to Claude for extraction leaves the device. The service role key is for the local agent only — never expose it to the browser.
+- Mail and calendar are read via Graph with tenant admin consent; raw mailbox access stays in Microsoft 365.
+- Structured threads, summaries, tasks, and events are stored in Supabase.
+- Text sent to Claude for extraction leaves the server during AI processing.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, Graph client secrets, or `SYNC_CRON_SECRET` in `NEXT_PUBLIC_*` variables or the browser.

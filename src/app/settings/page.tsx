@@ -41,7 +41,7 @@ export default async function SettingsPage() {
           <li>
             Set <code className="font-mono text-[var(--text)]">SCAN_FOLDERS</code>,{" "}
             <code className="font-mono text-[var(--text)]">ANTHROPIC_API_KEY</code>, and optional
-            IMAP vars in <code className="font-mono text-[var(--text)]">.env.local</code>
+            Microsoft IMAP vars in <code className="font-mono text-[var(--text)]">.env.local</code>
           </li>
           <li>
             Run <code className="font-mono text-[var(--text)]">pnpm scan</code>

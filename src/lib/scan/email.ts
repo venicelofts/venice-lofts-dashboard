@@ -1,6 +1,7 @@
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
 import { createHash } from 'node:crypto'
+import { formatScanError } from '@/lib/scan/errors'
 import { extractItinerary } from '@/lib/scan/extract'
 import { createServiceClient, upsertExtraction } from '@/lib/scan/persist'
 
@@ -22,6 +23,16 @@ function getImapConfig() {
  const port = Number(process.env.IMAP_PORT ?? '993')
  if (!host || !user || !pass) return null
  return { host, user, pass, port }
+}
+
+function imapLogger() {
+ if (process.env.IMAP_DEBUG !== '1') return false
+ return {
+  debug: (obj: unknown) => console.error('[imap debug]', obj),
+  info: (obj: unknown) => console.error('[imap info]', obj),
+  warn: (obj: unknown) => console.error('[imap warn]', obj),
+  error: (obj: unknown) => console.error('[imap error]', obj),
+ }
 }
 
 export async function scanEmail(userId: string): Promise<EmailScanStats> {
@@ -48,17 +59,41 @@ export async function scanEmail(userId: string): Promise<EmailScanStats> {
   port: config.port,
   secure: true,
   auth: { user: config.user, pass: config.pass },
-  logger: false,
+  logger: imapLogger(),
  })
 
  try {
-  await client.connect()
+  try {
+   await client.connect()
+  } catch (err) {
+   stats.errors.push(
+    formatScanError(
+     err,
+     `IMAP connect (${config.host}:${config.port} as ${config.user})`,
+    ),
+   )
+   return stats
+  }
+
   const lock = await client.getMailboxLock('INBOX')
   try {
-   const uids = await client.search({ since }, { uid: true })
+   let uids: number[] | false | undefined
+   try {
+    uids = await client.search({ since }, { uid: true })
+   } catch (err) {
+    stats.errors.push(
+     formatScanError(
+      err,
+      `IMAP SEARCH INBOX since ${since.toISOString()} (${lookbackHours}h lookback)`,
+     ),
+    )
+    return stats
+   }
+
    if (!uids || uids.length === 0) {
     return stats
    }
+
    for await (const message of client.fetch(uids, {
     uid: true,
     envelope: true,
@@ -138,16 +173,14 @@ export async function scanEmail(userId: string): Promise<EmailScanStats> {
      stats.messagesProcessed += 1
      stats.eventsCreated += result.eventCount
     } catch (err) {
-     stats.errors.push(
-      `uid ${message.uid}: ${err instanceof Error ? err.message : String(err)}`,
-     )
+     stats.errors.push(formatScanError(err, `message uid ${message.uid}`))
     }
    }
   } finally {
    lock.release()
   }
  } catch (err) {
-  stats.errors.push(err instanceof Error ? err.message : String(err))
+  stats.errors.push(formatScanError(err, 'IMAP inbox'))
  } finally {
   try {
    await client.logout()
