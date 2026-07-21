@@ -1,15 +1,15 @@
 # First scan
 
-Run the **local CLI scanner** on your Mac. It reads email (IMAP) and/or PDF folders, sends text to Claude, and writes events into Supabase for your user.
+Run the **local CLI scanner** on your Mac. It reads email (Microsoft Graph) and/or PDF folders, sends text to Claude, and writes events into Supabase for your user.
 
-**Prerequisites:** [Initial setup](initial-setup.md) and [Azure sign-in](azure.md) (so you can open Settings and get your user id).
+**Prerequisites:** [Initial setup](initial-setup.md) and [Azure sign-in](azure.md) (so you can open Settings and get your user id). For email scanning you also need Application `Mail.Read` + admin consent — see [azure.md](azure.md) Part 2.
 
 ---
 
 ## How it works
 
 ```
-pnpm scan  →  read IMAP inbox / PDF folders  →  Claude extraction  →  Supabase (events, sources)
+pnpm scan  →  Graph mailbox / PDF folders  →  Claude extraction  →  Supabase (events, sources)
 ```
 
 Scanning runs on **your machine**, not in the browser. The hosted UI cannot trigger it (`/api/scan` returns 501 by design).
@@ -50,21 +50,23 @@ From [console.anthropic.com](https://console.anthropic.com).
 
 Configure **at least one** of email or PDF folders.
 
-### Option A — Email (IMAP)
+### Option A — Email (Microsoft Graph)
 
-Scans **INBOX** for the last 48 hours (default). Only travel/schedule-related messages are processed.
+Scans **INBOX** for the lookback window (default 48 hours). Only travel/schedule-related messages are processed.
+
+Requires Application permission `Mail.Read` + admin consent on the Entra app (same app as dashboard login is fine). See [azure.md](azure.md) Part 2.
 
 ```env
-IMAP_HOST=outlook.office365.com
-IMAP_PORT=993
-IMAP_USER=you@yourdomain.com
-IMAP_PASS=your-app-password
-IMAP_LOOKBACK_HOURS=48
+AZURE_TENANT_ID=...
+AZURE_CLIENT_ID=...
+AZURE_CLIENT_SECRET=...
+GRAPH_MAILBOX=you@yourdomain.com
+SCAN_LOOKBACK_HOURS=48
 ```
 
-- Work/school Microsoft 365: `outlook.office365.com`
-- Many tenants require an **app password** or have IMAP disabled
-- This is **not** the Azure app used for dashboard sign-in
+- `GRAPH_MAILBOX` is the mailbox UPN Graph will read (e.g. `shelby@theloftsvenicebeach.com`)
+- Prefer an Exchange Application Access Policy so the app can only access that mailbox
+- No app passwords or IMAP
 
 ### Option B — Local PDF folders
 
@@ -90,7 +92,7 @@ pnpm scan
 ```
 Scanning folders: ...
 Folder scan: { filesSeen, filesProcessed, eventsCreated, ... }
-Scanning IMAP inbox…
+Scanning mailbox via Microsoft Graph…
 Email scan: { messagesSeen, messagesProcessed, eventsCreated, ... }
 Scan complete.
 ```
@@ -103,10 +105,10 @@ Scan complete.
 | `ANTHROPIC_API_KEY is not set`          | Add key (step 3)                                       |
 | `Failed to create scan_runs row`        | Run database migration                                 |
 | `Missing ... SUPABASE_SERVICE_ROLE_KEY` | Check Supabase vars in `.env.local`                    |
-| IMAP auth / connection errors           | Verify credentials; try PDF folders instead            |
+| Graph token / mail request failed       | Check `AZURE_*`, `Mail.Read` + admin consent, mailbox  |
 | `eventsCreated: 0`                      | Normal if no matching mail/PDFs in the lookback window |
 
-IMAP failures now print on separate lines with the failing step (`connect`, `SEARCH`, etc.) and the server’s response text when available. For verbose protocol logs, add `IMAP_DEBUG=1` to `.env.local`.
+Graph failures print on separate lines with the failing step and the API error text when available.
 
 ---
 
@@ -143,17 +145,15 @@ Edit [`launchd/com.venicelofts.scan.plist`](../launchd/com.venicelofts.scan.plis
 - [ ] Migration applied
 - [ ] `SCAN_USER_ID` from Settings
 - [ ] `ANTHROPIC_API_KEY` set
-- [ ] IMAP **or** `SCAN_FOLDERS` configured
+- [ ] Graph mail (`AZURE_*` + `GRAPH_MAILBOX`) **or** `SCAN_FOLDERS` configured
+- [ ] Application `Mail.Read` + admin consent (if using email)
 - [ ] `pnpm scan` → `Scan complete.`
 - [ ] Today / Sources show data
 
 ---
 
-## Not used for scanning
+## Not used for scanning (yet)
 
-These `.env.local` vars are for **future** server Graph sync, not `pnpm scan`:
+- `SYNC_CRON_SECRET` — future scheduled server sync endpoint
 
-- `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
-- `SYNC_CRON_SECRET`
-
-See [azure.md](azure.md) Part 2.
+See [azure.md](azure.md) Part 2 for cron / org-wide sync (not built yet).

@@ -51,7 +51,7 @@ Only the public Supabase vars:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `AZURE_CLIENT_SECRET`
 - `SYNC_CRON_SECRET`
-- `SCAN_USER_ID`, `IMAP_*`, `SCAN_FOLDERS` (scanner vars)
+- `SCAN_USER_ID`, `GRAPH_MAILBOX`, `SCAN_FOLDERS` (scanner vars)
 
 ### 3. Auth redirect
 

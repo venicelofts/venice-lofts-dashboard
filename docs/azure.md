@@ -1,17 +1,17 @@
 # Azure configuration
 
-Microsoft Entra ID (Azure) is used in two ways in this project. **Only Part 1 is required today.**
+Microsoft Entra ID (Azure) is used for dashboard sign-in and for local Graph mail scanning.
 
-| Part               | Purpose                                         | Required now?            |
-| ------------------ | ----------------------------------------------- | ------------------------ |
-| **Part 1 — Auth**  | “Sign in with Microsoft” on the dashboard       | **Yes**                  |
-| **Part 2 — Graph** | Server-side mail/calendar sync (future Ops MVP) | No (not implemented yet) |
+| Part               | Purpose                                         | Required now?                                       |
+| ------------------ | ----------------------------------------------- | --------------------------------------------------- |
+| **Part 1 — Auth**  | “Sign in with Microsoft” on the dashboard       | **Yes**                                             |
+| **Part 2 — Graph** | Local `pnpm scan` mail read; future server sync | **Yes for email scan**; cron/org sync not built yet |
 
 ---
 
 ## Part 1 — Dashboard login (required)
 
-Employees and admins sign in with Microsoft via **Supabase Auth**. This does **not** grant the app access to mailboxes.
+Employees and admins sign in with Microsoft via **Supabase Auth**. This does **not** by itself grant the app access to mailboxes (that needs Application `Mail.Read` in Part 2).
 
 ### 1. App registration
 
@@ -80,51 +80,52 @@ Open [http://localhost:3000](http://localhost:3000) → **Sign in with Microsoft
 
 ---
 
-## Part 2 — Graph mail/calendar sync (future)
+## Part 2 — Graph mail (local scan today)
 
-> **Not built yet.** The app does not read mail via Graph today. Local scanning uses IMAP — see [first-scan.md](first-scan.md).
+Local `pnpm scan` reads mail via **Microsoft Graph** with **application permissions** (client credentials). IMAP / app passwords are not used.
 
-When server-side sync ships, an admin will configure **application permissions** (not delegated user OAuth):
+You can add these permissions to the **same** app registration as Part 1, or a dedicated sync app.
 
-| Permission       | Type        | Purpose            |
-| ---------------- | ----------- | ------------------ |
-| `Mail.Read`      | Application | Read org mailboxes |
-| `Calendars.Read` | Application | Read calendars     |
+| Permission       | Type        | Purpose                         |
+| ---------------- | ----------- | ------------------------------- |
+| `Mail.Read`      | Application | Read org mailboxes for scanning |
+| `Calendars.Read` | Application | Future calendar sync            |
 
-Steps (for later):
+### Setup
 
-1. Use the same or a **dedicated** app registration (recommended: separate sync app)
+1. Use the same or a **dedicated** app registration
 2. Add **Application** permissions above → **Grant admin consent**
-3. Create a client secret
+3. Ensure a client secret exists (Part 1 secret is fine if reusing the same app)
 4. Put in `.env.local`:
 
    ```env
    AZURE_TENANT_ID=<directory-tenant-id>
    AZURE_CLIENT_ID=<application-client-id>
    AZURE_CLIENT_SECRET=<client-secret-value>
+   GRAPH_MAILBOX=you@yourdomain.com
+   SCAN_LOOKBACK_HOURS=48
    ```
 
 5. Optionally restrict mailboxes with an [Exchange Application Access Policy](https://learn.microsoft.com/en-us/graph/auth-limit-mailbox-access)
 
-Also planned (not implemented):
+See [first-scan.md](first-scan.md) to run the scanner.
+
+### Still planned (not implemented)
 
 - `SYNC_CRON_SECRET` — secures a scheduled sync HTTP endpoint
 - Admin UI to list mailbox UPNs in Settings
 - `organizations` / `organization_members` tables for multi-user ops
-
-You can add the Graph env vars now; they are ignored until sync code lands.
+- Server-side cron replacing local `pnpm scan`
 
 ---
 
 ## How Azure relates to local scanning
 
-| Mechanism                          | Used for                           |
-| ---------------------------------- | ---------------------------------- |
-| Azure app + Supabase Auth provider | Dashboard login                    |
-| `AZURE_*` in `.env.local`          | Future Graph sync only             |
-| `IMAP_*` in `.env.local`           | **Today’s** email scan on your Mac |
-
-IMAP mailbox credentials are separate from the Azure app used for sign-in. See [first-scan.md](first-scan.md).
+| Mechanism                          | Used for                                     |
+| ---------------------------------- | -------------------------------------------- |
+| Azure app + Supabase Auth provider | Dashboard login (delegated)                  |
+| `AZURE_*` + `GRAPH_MAILBOX`        | **Today’s** email scan on your Mac via Graph |
+| `SCAN_FOLDERS`                     | Optional PDF scan (no Graph needed)          |
 
 ---
 
@@ -139,8 +140,14 @@ IMAP mailbox credentials are separate from the Azure app used for sign-in. See [
 - [ ] `http://localhost:3000/auth/callback` in Supabase redirect URLs
 - [ ] Sign-in works at localhost
 
-**Later (Graph sync)**
+**Email scan (Graph)**
 
-- [ ] Application `Mail.Read` + `Calendars.Read` + admin consent
-- [ ] `AZURE_*` and `SYNC_CRON_SECRET` in server env
+- [ ] Application `Mail.Read` (+ optional `Calendars.Read`) + admin consent
+- [ ] `AZURE_*`, `GRAPH_MAILBOX`, and `SCAN_LOOKBACK_HOURS` in `.env.local`
+- [ ] Optional: Exchange Application Access Policy limited to that mailbox
+- [ ] `pnpm scan` succeeds
+
+**Later (server sync)**
+
+- [ ] `SYNC_CRON_SECRET` in server env
 - [ ] Cron hitting secured sync route

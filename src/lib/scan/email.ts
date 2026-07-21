@@ -1,6 +1,6 @@
-import { ImapFlow } from 'imapflow'
-import { simpleParser } from 'mailparser'
 import { createHash } from 'node:crypto'
+import { getGraphAzureConfig } from '@/lib/graph/auth'
+import { listInboxMessages } from '@/lib/graph/mail'
 import { formatScanError } from '@/lib/scan/errors'
 import { extractItinerary } from '@/lib/scan/extract'
 import { createServiceClient, upsertExtraction } from '@/lib/scan/persist'
@@ -16,23 +16,17 @@ export type EmailScanStats = {
  errors: string[]
 }
 
-function getImapConfig() {
- const host = process.env.IMAP_HOST
- const user = process.env.IMAP_USER
- const pass = process.env.IMAP_PASS
- const port = Number(process.env.IMAP_PORT ?? '993')
- if (!host || !user || !pass) return null
- return { host, user, pass, port }
+function getGraphMailbox(): string | null {
+ const mailbox = process.env.GRAPH_MAILBOX?.trim()
+ return mailbox || null
 }
 
-function imapLogger() {
- if (process.env.IMAP_DEBUG !== '1') return false
- return {
-  debug: (obj: unknown) => console.error('[imap debug]', obj),
-  info: (obj: unknown) => console.error('[imap info]', obj),
-  warn: (obj: unknown) => console.error('[imap warn]', obj),
-  error: (obj: unknown) => console.error('[imap error]', obj),
- }
+export function isEmailScanConfigured(): boolean {
+ return Boolean(getGraphAzureConfig() && getGraphMailbox())
+}
+
+function getScanLookbackHours(): number {
+ return Number(process.env.SCAN_LOOKBACK_HOURS ?? '48')
 }
 
 export async function scanEmail(userId: string): Promise<EmailScanStats> {
@@ -44,154 +38,91 @@ export async function scanEmail(userId: string): Promise<EmailScanStats> {
   errors: [],
  }
 
- const config = getImapConfig()
- if (!config) {
-  stats.errors.push('IMAP not configured (IMAP_HOST / IMAP_USER / IMAP_PASS)')
+ const mailbox = getGraphMailbox()
+ if (!getGraphAzureConfig() || !mailbox) {
+  stats.errors.push(
+   'Graph mail not configured (AZURE_TENANT_ID / AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / GRAPH_MAILBOX)',
+  )
   return stats
  }
 
- const lookbackHours = Number(process.env.IMAP_LOOKBACK_HOURS ?? '48')
+ const lookbackHours = getScanLookbackHours()
  const since = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
  const supabase = createServiceClient()
 
- const client = new ImapFlow({
-  host: config.host,
-  port: config.port,
-  secure: true,
-  auth: { user: config.user, pass: config.pass },
-  logger: imapLogger(),
- })
-
+ let messages
  try {
+  messages = await listInboxMessages({ mailbox, since })
+ } catch (err) {
+  stats.errors.push(
+   formatScanError(
+    err,
+    `Graph list inbox (${mailbox}, since ${since.toISOString()}, ${lookbackHours}h lookback)`,
+   ),
+  )
+  return stats
+ }
+
+ for (const message of messages) {
+  stats.messagesSeen += 1
   try {
-   await client.connect()
+   const { data: existing } = await supabase
+    .from('sources')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('external_id', message.internetMessageId)
+    .maybeSingle()
+
+   if (existing) {
+    stats.skipped += 1
+    continue
+   }
+
+   if (
+    !SUBJECT_HINT.test(message.subject) &&
+    !SUBJECT_HINT.test(message.bodyText.slice(0, 2000))
+   ) {
+    stats.skipped += 1
+    continue
+   }
+
+   const contentHash = createHash('sha256')
+    .update(message.internetMessageId + message.bodyText.slice(0, 5000))
+    .digest('hex')
+
+   const extraction = await extractItinerary(
+    `Subject: ${message.subject}\nFrom: ${message.from ?? ''}\n\n${message.bodyText}`,
+    { label: `email:${message.subject}` },
+   )
+
+   if (extraction.events.length === 0 && !extraction.trip) {
+    stats.skipped += 1
+    continue
+   }
+
+   const result = await upsertExtraction(supabase, {
+    userId,
+    kind: 'email',
+    externalId: message.internetMessageId,
+    contentHash,
+    pathOrSubject: message.subject,
+    textSnippet: message.bodyText,
+    metadata: {
+     from: message.from,
+     date: message.receivedAt,
+     mailbox,
+    },
+    extraction,
+   })
+
+   stats.messagesProcessed += 1
+   stats.eventsCreated += result.eventCount
   } catch (err) {
    stats.errors.push(
-    formatScanError(
-     err,
-     `IMAP connect (${config.host}:${config.port} as ${config.user})`,
-    ),
+    formatScanError(err, `message ${message.internetMessageId}`),
    )
-   return stats
-  }
-
-  const lock = await client.getMailboxLock('INBOX')
-  try {
-   let uids: number[] | false | undefined
-   try {
-    uids = await client.search({ since }, { uid: true })
-   } catch (err) {
-    stats.errors.push(
-     formatScanError(
-      err,
-      `IMAP SEARCH INBOX since ${since.toISOString()} (${lookbackHours}h lookback)`,
-     ),
-    )
-    return stats
-   }
-
-   if (!uids || uids.length === 0) {
-    return stats
-   }
-
-   for await (const message of client.fetch(uids, {
-    uid: true,
-    envelope: true,
-    source: true,
-   })) {
-    stats.messagesSeen += 1
-    try {
-     const subject = message.envelope?.subject ?? '(no subject)'
-     const messageId =
-      message.envelope?.messageId ?? `uid-${message.uid}@${config.host}`
-
-     const { data: existing } = await supabase
-      .from('sources')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('external_id', messageId)
-      .maybeSingle()
-
-     if (existing) {
-      stats.skipped += 1
-      continue
-     }
-
-     if (!message.source) {
-      stats.skipped += 1
-      continue
-     }
-
-     const parsed = await simpleParser(message.source)
-     const htmlText =
-      typeof parsed.html === 'string'
-       ? parsed.html.replace(/<[^>]+>/g, ' ')
-       : ''
-     const body = [parsed.text, htmlText].filter(Boolean).join('\n').trim()
-
-     if (!body) {
-      stats.skipped += 1
-      continue
-     }
-
-     if (
-      !SUBJECT_HINT.test(subject) &&
-      !SUBJECT_HINT.test(body.slice(0, 2000))
-     ) {
-      stats.skipped += 1
-      continue
-     }
-
-     const contentHash = createHash('sha256')
-      .update(messageId + body.slice(0, 5000))
-      .digest('hex')
-
-     const extraction = await extractItinerary(
-      `Subject: ${subject}\nFrom: ${parsed.from?.text ?? ''}\n\n${body}`,
-      { label: `email:${subject}` },
-     )
-
-     if (extraction.events.length === 0 && !extraction.trip) {
-      stats.skipped += 1
-      continue
-     }
-
-     const result = await upsertExtraction(supabase, {
-      userId,
-      kind: 'email',
-      externalId: messageId,
-      contentHash,
-      pathOrSubject: subject,
-      textSnippet: body,
-      metadata: {
-       from: parsed.from?.text ?? null,
-       date: parsed.date?.toISOString() ?? null,
-      },
-      extraction,
-     })
-
-     stats.messagesProcessed += 1
-     stats.eventsCreated += result.eventCount
-    } catch (err) {
-     stats.errors.push(formatScanError(err, `message uid ${message.uid}`))
-    }
-   }
-  } finally {
-   lock.release()
-  }
- } catch (err) {
-  stats.errors.push(formatScanError(err, 'IMAP inbox'))
- } finally {
-  try {
-   await client.logout()
-  } catch {
-   // ignore
   }
  }
 
  return stats
-}
-
-export function isImapConfigured() {
- return Boolean(getImapConfig())
 }

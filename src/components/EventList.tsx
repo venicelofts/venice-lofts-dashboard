@@ -22,7 +22,7 @@ export function EventList({ events }: { events: ItineraryEvent[] }) {
     return (
       <p className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
         No events yet. Run <code className="font-mono text-[var(--accent)]">pnpm scan</code> after
-        configuring folders or IMAP.
+        configuring Graph mail or folders.
       </p>
     );
   }

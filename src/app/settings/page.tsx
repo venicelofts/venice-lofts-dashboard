@@ -39,9 +39,11 @@ export default async function SettingsPage() {
         <CopyScanCommand />
         <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-[var(--text-muted)]">
           <li>
-            Set <code className="font-mono text-[var(--text)]">SCAN_FOLDERS</code>,{" "}
-            <code className="font-mono text-[var(--text)]">ANTHROPIC_API_KEY</code>, and optional
-            Microsoft IMAP vars in <code className="font-mono text-[var(--text)]">.env.local</code>
+            Set <code className="font-mono text-[var(--text)]">ANTHROPIC_API_KEY</code>, optional{" "}
+            <code className="font-mono text-[var(--text)]">SCAN_FOLDERS</code>, and for email{" "}
+            <code className="font-mono text-[var(--text)]">AZURE_*</code> +{" "}
+            <code className="font-mono text-[var(--text)]">GRAPH_MAILBOX</code> in{" "}
+            <code className="font-mono text-[var(--text)]">.env.local</code>
           </li>
           <li>
             Run <code className="font-mono text-[var(--text)]">pnpm scan</code>
