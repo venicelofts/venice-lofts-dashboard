@@ -37,7 +37,7 @@ export function LoginForm() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-6 shadow-lg">
+      <div className="card rounded-xl p-6">
         <p className="font-mono text-xs tracking-[0.18em] text-[var(--text-muted)] uppercase">
           Venice Lofts
         </p>

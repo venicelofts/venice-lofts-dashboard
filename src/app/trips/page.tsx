@@ -43,7 +43,7 @@ export default async function TripsPage() {
           {trips.map((trip) => (
             <li
               key={trip.id}
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3"
+              className="card px-4 py-3"
             >
               <h3 className="font-medium">{trip.title}</h3>
               <p className="mt-1 text-sm text-[var(--text-muted)]">

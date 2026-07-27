@@ -25,12 +25,12 @@ export default async function SettingsPage() {
         for you.
       </p>
 
-      <section className="mb-8 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+      <section className="card mb-8 p-4">
         <h3 className="font-medium">Your user id</h3>
         <p className="mt-2 break-all font-mono text-sm text-[var(--accent)]">{user.id}</p>
       </section>
 
-      <section className="mb-8 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+      <section className="card mb-8 p-4">
         <h3 className="font-medium">Run scan (CLI)</h3>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           Scanning stays on your machine (email/PDF access). Trigger it from a terminal or launchd —
@@ -55,7 +55,7 @@ export default async function SettingsPage() {
         </ol>
       </section>
 
-      <section className="mb-8 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+      <section className="card mb-8 p-4">
         <h3 className="font-medium">One-time schema setup</h3>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           If tables are missing, run{" "}
@@ -85,7 +85,7 @@ export default async function SettingsPage() {
             {runs.map((run) => (
               <li
                 key={run.id}
-                className="rounded border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2 font-mono text-xs"
+                className="card px-3 py-2 font-mono text-xs"
               >
                 <div className="flex flex-wrap justify-between gap-2">
                   <span>{new Date(run.started_at).toLocaleString()}</span>

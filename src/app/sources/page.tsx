@@ -30,7 +30,7 @@ export default async function SourcesPage() {
           {sources.map((source) => (
             <li
               key={source.id}
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3"
+              className="card px-4 py-3"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>

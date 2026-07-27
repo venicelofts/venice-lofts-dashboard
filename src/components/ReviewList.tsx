@@ -41,7 +41,7 @@ export function ReviewList({ events }: { events: ItineraryEvent[] }) {
       {events.map((event) => (
         <li
           key={event.id}
-          className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-3"
+          className="card px-4 py-3"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
