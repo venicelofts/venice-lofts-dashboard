@@ -8,11 +8,16 @@ import { EventList } from "@/components/EventList";
 export function RealtimeEvents({
   initialEvents,
   userId,
+  from,
+  to,
 }: {
   initialEvents: ItineraryEvent[];
   userId: string;
+  from: string;
+  to: string;
 }) {
   const [events, setEvents] = useState(initialEvents);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     setEvents(initialEvents);
@@ -20,6 +25,17 @@ export function RealtimeEvents({
 
   useEffect(() => {
     const supabase = createClient();
+
+    async function refetch() {
+      const { data } = await supabase
+        .from("events")
+        .select("*")
+        .eq("user_id", userId)
+        .or(`starts_at.is.null,and(starts_at.gte.${from},starts_at.lte.${to})`)
+        .order("starts_at", { ascending: true, nullsFirst: false });
+      if (data) setEvents(data);
+    }
+
     const channel = supabase
       .channel("events-realtime")
       .on(
@@ -31,14 +47,7 @@ export function RealtimeEvents({
           filter: `user_id=eq.${userId}`,
         },
         () => {
-          void supabase
-            .from("events")
-            .select("*")
-            .eq("user_id", userId)
-            .order("starts_at", { ascending: true, nullsFirst: false })
-            .then(({ data }) => {
-              if (data) setEvents(data);
-            });
+          void refetch();
         },
       )
       .subscribe();
@@ -46,7 +55,19 @@ export function RealtimeEvents({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, from, to]);
 
-  return <EventList events={events} />;
+  async function dismiss(id: string) {
+    setBusyId(id);
+    const previous = events;
+    setEvents((prev) => prev.filter((event) => event.id !== id));
+    const supabase = createClient();
+    const { error } = await supabase.from("events").delete().eq("id", id);
+    if (error) {
+      setEvents(previous);
+    }
+    setBusyId(null);
+  }
+
+  return <EventList events={events} busyId={busyId} onDismiss={(id) => void dismiss(id)} />;
 }

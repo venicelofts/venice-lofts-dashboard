@@ -47,7 +47,13 @@ export default async function TodayPage() {
               : "never"}
         </p>
       </div>
-      <RealtimeEvents initialEvents={events ?? []} userId={user.id} />
+      <RealtimeEvents
+        initialEvents={events ?? []}
+        userId={user.id}
+        from={from}
+        to={to}
+      />
+
     </AppShell>
   );
 }
