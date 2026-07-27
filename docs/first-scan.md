@@ -1,8 +1,8 @@
 # First scan
 
-Run the **local CLI scanner** on your Mac. It reads email (Microsoft Graph) and/or PDF folders, sends text to Claude, and writes events into Supabase for your user.
+Run the **local CLI scanner** on your Mac. It reads email (Microsoft Graph) and/or PDF folders, sends text to Claude, and writes events into Supabase as a **shared ops dataset** (every signed-in user sees the same data).
 
-**Prerequisites:** [Initial setup](initial-setup.md) and [Azure sign-in](azure.md) (so you can open Settings and get your user id). For email scanning you also need Application `Mail.Read` + admin consent — see [azure.md](azure.md) Part 2.
+**Prerequisites:** [Initial setup](initial-setup.md) and [Azure sign-in](azure.md) (so you can open Settings and get a user id for `SCAN_USER_ID`). For email scanning you also need Application `Mail.Read` + admin consent — see [azure.md](azure.md) Part 2.
 
 ---
 
@@ -18,11 +18,16 @@ Scanning runs on **your machine**, not in the browser. The hosted UI cannot trig
 
 ## 1. Confirm the database
 
-If you skipped this in initial setup, run [`supabase/migrations/20260711143000_itinerary_schema.sql`](../supabase/migrations/20260711143000_itinerary_schema.sql) in the Supabase SQL Editor (or `pnpm db:migrate` with `DATABASE_URL` set).
+If you skipped this in initial setup, run the SQL in [`supabase/migrations/`](../supabase/migrations/) in the Supabase SQL Editor (or `pnpm db:migrate` with `DATABASE_URL` set). Fresh projects need both:
+
+- `20260711143000_itinerary_schema.sql`
+- `20260727223000_shared_ops_rls.sql` (shared access for all signed-in users)
 
 ---
 
 ## 2. Set `SCAN_USER_ID`
+
+Pick **one** admin account as the scan owner (any signed-in user works; data is shared).
 
 1. `pnpm dev` → open [Settings](http://localhost:3000/settings)
 2. Copy **Your user id** (UUID)
@@ -31,6 +36,8 @@ If you skipped this in initial setup, run [`supabase/migrations/20260711143000_i
    ```env
    SCAN_USER_ID=paste-your-uuid-here
    ```
+
+Scans write rows under this id. Every authenticated user can view and edit the shared dataset.
 
 ---
 

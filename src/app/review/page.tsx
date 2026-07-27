@@ -19,7 +19,6 @@ export default async function ReviewPage({
   const { data: events } = await supabase
     .from("events")
     .select("*")
-    .eq("user_id", user.id)
     .eq("needs_review", true)
     .order("created_at", { ascending: false });
 

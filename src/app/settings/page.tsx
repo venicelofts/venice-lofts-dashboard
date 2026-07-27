@@ -11,7 +11,6 @@ export default async function SettingsPage() {
   const { data: runs } = await supabase
     .from("scan_runs")
     .select("*")
-    .eq("user_id", user.id)
     .order("started_at", { ascending: false })
     .limit(10);
 
@@ -21,6 +20,10 @@ export default async function SettingsPage() {
 
       <section className="card mb-8 p-5">
         <h3 className="font-serif text-lg font-medium">Your user id</h3>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
+          Used only for scanner setup (<code className="font-mono">SCAN_USER_ID</code>).
+          All signed-in users see the same shared ops data.
+        </p>
         <p className="mt-2 break-all font-mono text-sm text-[var(--accent)]">{user.id}</p>
       </section>
 

@@ -1,4 +1,5 @@
 -- Itinerary dashboard schema + RLS
+-- Idempotent: safe if tables/policies were created earlier outside migration history.
 
 -- profiles
 create table if not exists public.profiles (
@@ -9,10 +10,12 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can select own profile" on public.profiles;
 create policy "Users can select own profile"
   on public.profiles for select to authenticated
   using (id = (select auth.uid()));
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update to authenticated
   using (id = (select auth.uid()))
@@ -51,6 +54,7 @@ create table if not exists public.trips (
 create index if not exists trips_user_id_idx on public.trips (user_id);
 alter table public.trips enable row level security;
 
+drop policy if exists "Users manage own trips" on public.trips;
 create policy "Users manage own trips"
   on public.trips for all to authenticated
   using (user_id = (select auth.uid()))
@@ -73,6 +77,7 @@ create table if not exists public.sources (
 create index if not exists sources_user_id_idx on public.sources (user_id);
 alter table public.sources enable row level security;
 
+drop policy if exists "Users manage own sources" on public.sources;
 create policy "Users manage own sources"
   on public.sources for all to authenticated
   using (user_id = (select auth.uid()))
@@ -92,6 +97,7 @@ create index if not exists documents_user_id_idx on public.documents (user_id);
 create index if not exists documents_source_id_idx on public.documents (source_id);
 alter table public.documents enable row level security;
 
+drop policy if exists "Users manage own documents" on public.documents;
 create policy "Users manage own documents"
   on public.documents for all to authenticated
   using (user_id = (select auth.uid()))
@@ -121,6 +127,7 @@ create index if not exists events_starts_at_idx on public.events (starts_at);
 create index if not exists events_needs_review_idx on public.events (user_id, needs_review);
 alter table public.events enable row level security;
 
+drop policy if exists "Users manage own events" on public.events;
 create policy "Users manage own events"
   on public.events for all to authenticated
   using (user_id = (select auth.uid()))
@@ -139,6 +146,7 @@ create table if not exists public.scan_runs (
 create index if not exists scan_runs_user_id_idx on public.scan_runs (user_id, started_at desc);
 alter table public.scan_runs enable row level security;
 
+drop policy if exists "Users manage own scan_runs" on public.scan_runs;
 create policy "Users manage own scan_runs"
   on public.scan_runs for all to authenticated
   using (user_id = (select auth.uid()))

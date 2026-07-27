@@ -11,7 +11,6 @@ export default async function SourcesPage() {
   const { data: sources } = await supabase
     .from("sources")
     .select("*")
-    .eq("user_id", user.id)
     .order("last_scanned_at", { ascending: false })
     .limit(100);
 

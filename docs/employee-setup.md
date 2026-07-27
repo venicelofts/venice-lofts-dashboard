@@ -12,7 +12,7 @@ Give a Venice Lofts **employee** access to the dashboard without scanner or serv
 - View and work assigned tasks/events (as the app supports today)
 - **Do not** run `pnpm scan` or store Graph/service-role secrets locally
 
-> **Note:** Org-wide membership (`organization_members`) and shared ops views are planned but not in the database yet. Today the app is largely **per-user** (data scoped by `user_id`).
+> **Shared ops data:** All signed-in employees see the same trips, events, sources, and scan runs. Mailboxes are scanned into one shared dataset (`SCAN_USER_ID` on the admin machine); dashboards are not filtered by the viewer’s user id.
 
 ---
 

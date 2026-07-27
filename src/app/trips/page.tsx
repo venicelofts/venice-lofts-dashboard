@@ -11,7 +11,6 @@ export default async function TripsPage() {
   const { data: trips } = await supabase
     .from("trips")
     .select("*")
-    .eq("user_id", user.id)
     .order("starts_on", { ascending: true, nullsFirst: false });
 
   const tripIds = (trips ?? []).map((t) => t.id);
@@ -20,7 +19,6 @@ export default async function TripsPage() {
     const { data: events } = await supabase
       .from("events")
       .select("trip_id")
-      .eq("user_id", user.id)
       .in("trip_id", tripIds);
     for (const row of events ?? []) {
       if (!row.trip_id) continue;

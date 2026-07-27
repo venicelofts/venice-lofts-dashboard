@@ -7,12 +7,10 @@ import { EventList } from "@/components/EventList";
 
 export function RealtimeEvents({
   initialEvents,
-  userId,
   from,
   to,
 }: {
   initialEvents: ItineraryEvent[];
-  userId: string;
   from: string;
   to: string;
 }) {
@@ -30,7 +28,6 @@ export function RealtimeEvents({
       const { data } = await supabase
         .from("events")
         .select("*")
-        .eq("user_id", userId)
         .or(`starts_at.is.null,and(starts_at.gte.${from},starts_at.lte.${to})`)
         .order("starts_at", { ascending: true, nullsFirst: false });
       if (data) setEvents(data);
@@ -44,7 +41,6 @@ export function RealtimeEvents({
           event: "*",
           schema: "public",
           table: "events",
-          filter: `user_id=eq.${userId}`,
         },
         () => {
           void refetch();
@@ -55,7 +51,7 @@ export function RealtimeEvents({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, from, to]);
+  }, [from, to]);
 
   async function dismiss(id: string) {
     setBusyId(id);

@@ -19,7 +19,6 @@ export function OpsDashboard({
   initialUpcomingEvents,
   initialReviewEvents,
   sources,
-  userId,
   from,
   to,
 }: {
@@ -27,7 +26,6 @@ export function OpsDashboard({
   initialUpcomingEvents: ItineraryEvent[];
   initialReviewEvents: ItineraryEvent[];
   sources: Source[];
-  userId: string;
   from: string;
   to: string;
 }) {
@@ -50,20 +48,17 @@ export function OpsDashboard({
         supabase
           .from("events")
           .select("*")
-          .eq("user_id", userId)
           .or(`starts_at.is.null,and(starts_at.gte.${from},starts_at.lte.${to})`)
           .order("starts_at", { ascending: true, nullsFirst: false }),
         supabase
           .from("events")
           .select("*")
-          .eq("user_id", userId)
           .gt("starts_at", to)
           .order("starts_at", { ascending: true })
           .limit(8),
         supabase
           .from("events")
           .select("*")
-          .eq("user_id", userId)
           .eq("needs_review", true)
           .order("created_at", { ascending: false })
           .limit(8),
@@ -82,7 +77,6 @@ export function OpsDashboard({
           event: "*",
           schema: "public",
           table: "events",
-          filter: `user_id=eq.${userId}`,
         },
         () => {
           void refetch();
@@ -93,7 +87,7 @@ export function OpsDashboard({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, from, to]);
+  }, [from, to]);
 
   const focusEvent = useMemo(
     () => pickFocus(weekEvents, reviewEvents),

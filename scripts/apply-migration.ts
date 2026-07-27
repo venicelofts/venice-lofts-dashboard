@@ -4,8 +4,8 @@
  * Set DATABASE_URL in .env.local (Settings → Database → Connection string URI),
  * then run: pnpm db:migrate
  *
- * Or paste supabase/migrations/20260711143000_itinerary_schema.sql into the
- * Supabase SQL Editor and run it once.
+ * Or paste supabase/migrations/*.sql into the
+ * Supabase SQL Editor and run them once (schema, then shared_ops_rls).
  */
 import { config as loadEnv } from 'dotenv'
 import { promises as fs } from 'node:fs'
