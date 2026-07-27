@@ -112,8 +112,8 @@ export function AppShell({
                 key={link.href}
                 href={link.href}
                 className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${active
-                    ? "bg-[var(--accent)] text-[#f7f5ef]"
-                    : "text-[var(--text-muted)] hover:bg-[var(--bg-soft)] hover:text-[var(--text)]"
+                  ? "nav-pill-active"
+                  : "text-[var(--text-muted)] hover:bg-[var(--bg-soft)] hover:text-[var(--text)]"
                   }`}
               >
                 {link.label}

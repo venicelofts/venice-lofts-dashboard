@@ -70,6 +70,19 @@ a {
  text-decoration: none;
 }
 
+a.btn-pill-primary,
+a.btn-pill-primary:hover,
+.btn-pill-primary {
+ color: #ffffff;
+}
+
+a.nav-pill-active,
+a.nav-pill-active:hover,
+.nav-pill-active {
+ background: var(--accent);
+ color: #ffffff;
+}
+
 button,
 input,
 select,
@@ -143,11 +156,12 @@ textarea {
 
 .btn-pill-primary {
  background: var(--accent);
- color: #f7f5ef;
+ color: #ffffff;
 }
 
 .btn-pill-primary:hover {
  background: var(--accent-hover);
+ color: #ffffff;
 }
 
 .btn-pill-gold {
