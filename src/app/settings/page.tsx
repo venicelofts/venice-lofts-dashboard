@@ -17,24 +17,23 @@ export default async function SettingsPage() {
 
   return (
     <AppShell email={user.email}>
-      <h2 className="mb-6 text-xl font-semibold">Settings</h2>
+      <h2 className="section-title mb-6">Settings</h2>
 
-      <section className="card mb-8 p-4">
-        <h3 className="font-medium">Your user id</h3>
+      <section className="card mb-8 p-5">
+        <h3 className="font-serif text-lg font-medium">Your user id</h3>
         <p className="mt-2 break-all font-mono text-sm text-[var(--accent)]">{user.id}</p>
       </section>
 
       <section>
-        <h3 className="mb-3 font-medium">Recent scan runs</h3>
+        <h3 className="mb-3 font-serif text-lg font-medium text-[var(--accent)]">
+          Recent scan runs
+        </h3>
         {!runs?.length ? (
           <p className="text-sm text-[var(--text-muted)]">No scan runs yet.</p>
         ) : (
           <ul className="space-y-2">
             {runs.map((run) => (
-              <li
-                key={run.id}
-                className="card px-3 py-2 font-mono text-xs"
-              >
+              <li key={run.id} className="card px-3 py-2 font-mono text-xs">
                 <div className="flex flex-wrap justify-between gap-2">
                   <span>{new Date(run.started_at).toLocaleString()}</span>
                   <span className={run.error ? "text-[var(--danger)]" : "text-[var(--ok)]"}>

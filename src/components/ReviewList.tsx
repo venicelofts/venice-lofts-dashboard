@@ -43,7 +43,7 @@ export function ReviewList({
 
   if (events.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
+      <p className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
         Nothing in the review queue.
       </p>
     );
@@ -57,14 +57,12 @@ export function ReviewList({
           <li
             key={event.id}
             id={`review-event-${event.id}`}
-            className={`card px-4 py-3 transition-[box-shadow,border-color]${focused
-                ? " border-[var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
-                : ""
+            className={`card card-interactive px-4 py-4 transition-[box-shadow,border-color]${focused ? " border-[var(--accent)] shadow-[0_0_0_1px_var(--accent)]" : ""
               }`}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="font-medium">{event.title}</h3>
+                <h3 className="font-serif text-lg font-medium">{event.title}</h3>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
                   confidence {(event.confidence * 100).toFixed(0)}% · {event.category}
                 </p>
@@ -77,7 +75,7 @@ export function ReviewList({
                   type="button"
                   disabled={busy === event.id}
                   onClick={() => void confirm(event.id)}
-                  className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm text-black disabled:opacity-50"
+                  className="btn-pill btn-pill-primary px-4 py-1.5"
                 >
                   Confirm
                 </button>
@@ -85,7 +83,7 @@ export function ReviewList({
                   type="button"
                   disabled={busy === event.id}
                   onClick={() => void remove(event.id)}
-                  className="rounded border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--danger)] disabled:opacity-50"
+                  className="btn-pill btn-pill-ghost text-[var(--danger)]"
                 >
                   Dismiss
                 </button>

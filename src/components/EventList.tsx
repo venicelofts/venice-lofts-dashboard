@@ -12,12 +12,12 @@ function formatWhen(value: string | null) {
 }
 
 const categoryColor: Record<string, string> = {
-  flight: "#3d9cf0",
-  hotel: "#a78bfa",
-  meeting: "#3ecf8e",
-  deadline: "#e6a23c",
-  travel: "#67e8f9",
-  other: "#8b9aab",
+  flight: "#1b4d3e",
+  hotel: "#6b7c5e",
+  meeting: "#b8923f",
+  deadline: "#9a4f42",
+  travel: "#3d6b7a",
+  other: "#8a7a5c",
 };
 
 export function EventList({
@@ -33,7 +33,7 @@ export function EventList({
 
   if (events.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
+      <p className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
         No events yet. Run <code className="font-mono text-[var(--accent)]">pnpm scan</code> after
         configuring Graph mail or folders.
       </p>
@@ -48,7 +48,7 @@ export function EventList({
         return (
           <li
             key={event.id}
-            className={`card px-4 py-3${needsReview ? " cursor-pointer" : ""}`}
+            className={`card card-interactive px-4 py-3${needsReview ? " cursor-pointer" : ""}`}
             role={needsReview ? "link" : undefined}
             tabIndex={needsReview ? 0 : undefined}
             onClick={
@@ -74,7 +74,7 @@ export function EventList({
                     className="inline-block h-2 w-2 shrink-0 rounded-full"
                     style={{ background: categoryColor[event.category] ?? categoryColor.other }}
                   />
-                  <h3 className="font-medium">{event.title}</h3>
+                  <h3 className="font-serif text-lg font-medium">{event.title}</h3>
                 </div>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
                   {formatWhen(event.starts_at)}
@@ -82,7 +82,7 @@ export function EventList({
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="font-mono text-xs text-[var(--text-muted)]">
+                <div className="text-xs tracking-wide text-[var(--text-muted)] uppercase">
                   {event.category}
                   {needsReview ? (
                     <span className="ml-2 text-[var(--warn)]">needs review</span>
@@ -98,7 +98,7 @@ export function EventList({
                       e.stopPropagation();
                       onDismiss(event.id);
                     }}
-                    className="-mr-1 -mt-0.5 rounded p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--danger)] disabled:opacity-50"
+                    className="-mr-1 -mt-0.5 rounded-full p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--danger)] disabled:opacity-50"
                   >
                     <svg
                       aria-hidden="true"

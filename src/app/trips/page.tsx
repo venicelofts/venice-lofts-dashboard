@@ -30,22 +30,19 @@ export default async function TripsPage() {
 
   return (
     <AppShell email={user.email}>
-      <h2 className="mb-2 text-xl font-semibold">Trips</h2>
+      <h2 className="section-title mb-2">Trips</h2>
       <p className="mb-6 text-sm text-[var(--text-muted)]">
         Groupings created by the scanner from related confirmations.
       </p>
       {!trips?.length ? (
-        <p className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
+        <p className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-10 text-center text-[var(--text-muted)]">
           No trips yet.
         </p>
       ) : (
         <ul className="space-y-3">
           {trips.map((trip) => (
-            <li
-              key={trip.id}
-              className="card px-4 py-3"
-            >
-              <h3 className="font-medium">{trip.title}</h3>
+            <li key={trip.id} className="card card-interactive px-4 py-3">
+              <h3 className="font-serif text-lg font-medium">{trip.title}</h3>
               <p className="mt-1 text-sm text-[var(--text-muted)]">
                 {trip.starts_on ?? "?"} → {trip.ends_on ?? "?"} · {counts.get(trip.id) ?? 0}{" "}
                 events

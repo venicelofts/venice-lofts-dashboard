@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Fraunces, Great_Vibes, IBM_Plex_Mono, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-serif",
+});
+
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-script",
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -15,8 +27,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Venice Lofts",
-  description: "Local-scan schedule dashboard for Venice Lofts powered by Supabase",
+  title: "The Lofts Events",
+  description: "Ops dashboard for Venice Lofts events, schedule, and email workflow",
 };
 
 export default function RootLayout({
@@ -26,7 +38,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`}>
+      <body
+        className={`${sourceSans.variable} ${fraunces.variable} ${greatVibes.variable} ${plexMono.variable} antialiased`}
+      >
         {children}
       </body>
     </html>

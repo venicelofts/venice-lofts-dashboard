@@ -25,9 +25,12 @@ export default async function ReviewPage({
 
   return (
     <AppShell email={user.email}>
-      <h2 className="mb-2 text-xl font-semibold">Review</h2>
+      <h2 className="section-title mb-2">Review</h2>
+      <p className="font-script mb-6 text-xl text-[var(--gold)]">
+        Confirm what stays, dismiss what doesn&apos;t
+      </p>
       <p className="mb-6 text-sm text-[var(--text-muted)]">
-        Low-confidence extractions items. Confirm to keep, dismiss to delete.
+        Low-confidence extracted items. Confirm to keep, dismiss to delete.
       </p>
       <ReviewList events={events ?? []} focusId={focusId} />
     </AppShell>

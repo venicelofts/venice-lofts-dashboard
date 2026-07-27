@@ -37,11 +37,12 @@ export function LoginForm() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-      <div className="card rounded-xl p-6">
-        <p className="font-mono text-xs tracking-[0.18em] text-[var(--text-muted)] uppercase">
-          Venice Lofts
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold">Sign in</h1>
+      <div className="card rounded-2xl p-7">
+        <div className="flex items-baseline gap-2">
+          <span className="font-serif text-2xl font-semibold">The Lofts</span>
+          <span className="font-script text-2xl text-[var(--gold)]">Events</span>
+        </div>
+        <h1 className="mt-5 font-serif text-2xl text-[var(--accent)]">Sign in</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           Use your Microsoft account to access the dashboard.
         </p>
@@ -49,7 +50,7 @@ export function LoginForm() {
           type="button"
           onClick={signInWithMicrosoft}
           disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded bg-[var(--accent)] px-3 py-2.5 font-medium text-black disabled:opacity-50"
+          className="btn-pill btn-pill-primary mt-6 w-full py-2.5"
         >
           <MicrosoftIcon />
           {loading ? "Redirecting…" : "Continue with Microsoft"}
