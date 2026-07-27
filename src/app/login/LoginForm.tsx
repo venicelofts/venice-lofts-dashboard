@@ -43,8 +43,7 @@ export function LoginForm() {
         </p>
         <h1 className="mt-2 text-2xl font-semibold">Sign in</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Use your Microsoft account. Sign in with the same address you use for email scanning in{" "}
-          <code className="font-mono text-[var(--text)]">.env.local</code>.
+          Use your Microsoft account to access the dashboard.
         </p>
         <button
           type="button"
