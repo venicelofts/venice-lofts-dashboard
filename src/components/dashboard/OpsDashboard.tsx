@@ -129,21 +129,30 @@ export function OpsDashboard({
 
     setBusyId(id);
     const supabase = createClient();
+    const clearedAt = new Date().toISOString();
     const { error } = await supabase
       .from("events")
-      .update({ needs_review: false, confidence: 0.9 })
+      .update({
+        needs_review: false,
+        confidence: 0.9,
+        cleared_at: clearedAt,
+      })
       .eq("id", id);
 
     if (!error) {
       setReviewEvents((prev) => prev.filter((event) => event.id !== id));
       setWeekEvents((prev) =>
         prev.map((event) =>
-          event.id === id ? { ...event, needs_review: false, confidence: 0.9 } : event,
+          event.id === id
+            ? { ...event, needs_review: false, confidence: 0.9, cleared_at: clearedAt }
+            : event,
         ),
       );
       setUpcomingEvents((prev) =>
         prev.map((event) =>
-          event.id === id ? { ...event, needs_review: false, confidence: 0.9 } : event,
+          event.id === id
+            ? { ...event, needs_review: false, confidence: 0.9, cleared_at: clearedAt }
+            : event,
         ),
       );
     }

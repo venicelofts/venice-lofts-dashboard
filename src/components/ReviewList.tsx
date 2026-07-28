@@ -27,7 +27,11 @@ export function ReviewList({
     const supabase = createClient();
     await supabase
       .from("events")
-      .update({ needs_review: false, confidence: 0.9 })
+      .update({
+        needs_review: false,
+        confidence: 0.9,
+        cleared_at: new Date().toISOString(),
+      })
       .eq("id", id);
     setBusy(null);
     router.refresh();

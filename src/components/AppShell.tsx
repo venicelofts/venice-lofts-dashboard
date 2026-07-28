@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { GetItDoneFocus } from "@/components/GetItDoneFocus";
+import { RecapTheDay } from "@/components/RecapTheDay";
 import { createClient } from "@/lib/supabase/client";
 
 const links = [
@@ -79,15 +81,8 @@ export function AppShell({
               </p>
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
-              <Link href="/review" className="btn-pill btn-pill-primary">
-                Let&apos;s get it done
-              </Link>
-              <Link href="/sources" className="btn-pill btn-pill-gold">
-                Handled details
-              </Link>
-              <Link href="/settings" className="btn-pill btn-pill-soft">
-                Recap the day
-              </Link>
+              <GetItDoneFocus />
+              <RecapTheDay />
               <button
                 type="button"
                 onClick={signOut}
@@ -95,7 +90,7 @@ export function AppShell({
                 aria-label="Sign out"
                 title="Sign out"
               >
-                <SettingsIcon />
+                <SignOutIcon />
               </button>
             </div>
           </div>
@@ -128,7 +123,7 @@ export function AppShell({
   );
 }
 
-function SettingsIcon() {
+function SignOutIcon() {
   return (
     <svg
       aria-hidden="true"
@@ -141,8 +136,9 @@ function SettingsIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   );
 }
