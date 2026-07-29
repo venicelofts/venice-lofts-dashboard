@@ -14,6 +14,7 @@ import {
   toCalendarEvent,
   type CalendarEvent,
 } from "@/lib/calendar/types";
+import { withSourceKind } from "@/components/dashboard/listShared";
 import { createClient } from "@/lib/supabase/server";
 
 function formatLastSynced(finishedAt: string | null | undefined, hasRun: boolean) {
@@ -46,7 +47,7 @@ export default async function TodayPage() {
   ] = await Promise.all([
     supabase
       .from("events")
-      .select("*")
+      .select("*, sources(kind)")
       .or(`starts_at.is.null,and(starts_at.gte.${from},starts_at.lte.${to})`)
       .order("starts_at", { ascending: true, nullsFirst: false }),
     supabase
@@ -86,16 +87,34 @@ export default async function TodayPage() {
     toCalendarEvent(row as Parameters<typeof toCalendarEvent>[0]),
   );
 
+  const weekListEvents = (weekEvents ?? []).map((row) =>
+    withSourceKind(row as Parameters<typeof withSourceKind>[0]),
+  );
+
+  const sourceIds = [
+    ...new Set(
+      [...weekListEvents, ...calendarEvents]
+        .map((e) => e.source_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const { data: notes } =
+    sourceIds.length > 0
+      ? await supabase.from("item_notes").select("*").in("source_id", sourceIds)
+      : { data: [] };
+
   return (
     <AppShell
       email={user.email}
       lastSyncedLabel={formatLastSynced(lastRun?.finished_at, Boolean(lastRun))}
     >
       <OpsDashboard
-        initialWeekEvents={weekEvents ?? []}
+        initialWeekEvents={weekListEvents}
         initialUpcomingEvents={upcomingEvents ?? []}
         initialReviewEvents={reviewEvents ?? []}
         initialCalendarEvents={calendarEvents}
+        initialNotes={notes ?? []}
         sources={sources ?? []}
         from={from}
         to={to}

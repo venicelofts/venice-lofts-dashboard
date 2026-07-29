@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { ItineraryEvent, Source } from "@/lib/database.types";
+import type { ItemNote, ItineraryEvent, Source } from "@/lib/database.types";
 import {
   CALENDAR_EVENT_SELECT,
   toCalendarEvent,
@@ -13,11 +13,30 @@ import { OnTheCalendar } from "@/components/dashboard/OnTheCalendar";
 import { WeekAhead } from "@/components/dashboard/WeekAhead";
 import { UpcomingEvents } from "@/components/dashboard/UpcomingEvents";
 import { EmailPanels } from "@/components/dashboard/EmailPanels";
+import {
+  ItemNoteModal,
+  type NoteTarget,
+} from "@/components/dashboard/ItemNoteModal";
+import {
+  withSourceKind,
+  type DashboardListEvent,
+} from "@/components/dashboard/listShared";
 
-function pickFocus(weekEvents: ItineraryEvent[], reviewEvents: ItineraryEvent[]) {
+function pickFocus(
+  weekEvents: DashboardListEvent[],
+  reviewEvents: ItineraryEvent[],
+) {
   const fromReview = reviewEvents[0];
   if (fromReview) return fromReview;
   return weekEvents.find((e) => e.needs_review) ?? weekEvents[0] ?? null;
+}
+
+function notesMapFromRows(notes: ItemNote[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const note of notes) {
+    map[note.source_id] = note.body;
+  }
+  return map;
 }
 
 export function OpsDashboard({
@@ -25,16 +44,18 @@ export function OpsDashboard({
   initialUpcomingEvents,
   initialReviewEvents,
   initialCalendarEvents,
+  initialNotes,
   sources,
   from,
   to,
   calendarFrom,
   calendarTo,
 }: {
-  initialWeekEvents: ItineraryEvent[];
+  initialWeekEvents: DashboardListEvent[];
   initialUpcomingEvents: ItineraryEvent[];
   initialReviewEvents: ItineraryEvent[];
   initialCalendarEvents: CalendarEvent[];
+  initialNotes: ItemNote[];
   sources: Source[];
   from: string;
   to: string;
@@ -45,31 +66,40 @@ export function OpsDashboard({
   const [upcomingEvents, setUpcomingEvents] = useState(initialUpcomingEvents);
   const [reviewEvents, setReviewEvents] = useState(initialReviewEvents);
   const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
+  const [notesBySourceId, setNotesBySourceId] = useState(() =>
+    notesMapFromRows(initialNotes),
+  );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [noteBusy, setNoteBusy] = useState(false);
+  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
 
   const [propStamp, setPropStamp] = useState(() => ({
     week: initialWeekEvents,
     upcoming: initialUpcomingEvents,
     review: initialReviewEvents,
     calendar: initialCalendarEvents,
+    notes: initialNotes,
   }));
 
   if (
     propStamp.week !== initialWeekEvents ||
     propStamp.upcoming !== initialUpcomingEvents ||
     propStamp.review !== initialReviewEvents ||
-    propStamp.calendar !== initialCalendarEvents
+    propStamp.calendar !== initialCalendarEvents ||
+    propStamp.notes !== initialNotes
   ) {
     setPropStamp({
       week: initialWeekEvents,
       upcoming: initialUpcomingEvents,
       review: initialReviewEvents,
       calendar: initialCalendarEvents,
+      notes: initialNotes,
     });
     setWeekEvents(initialWeekEvents);
     setUpcomingEvents(initialUpcomingEvents);
     setReviewEvents(initialReviewEvents);
     setCalendarEvents(initialCalendarEvents);
+    setNotesBySourceId(notesMapFromRows(initialNotes));
   }
 
   useEffect(() => {
@@ -79,7 +109,7 @@ export function OpsDashboard({
       const [weekRes, upcomingRes, reviewRes, calendarRes] = await Promise.all([
         supabase
           .from("events")
-          .select("*")
+          .select("*, sources(kind)")
           .or(`starts_at.is.null,and(starts_at.gte.${from},starts_at.lte.${to})`)
           .order("starts_at", { ascending: true, nullsFirst: false }),
         supabase
@@ -103,7 +133,13 @@ export function OpsDashboard({
           .order("starts_at", { ascending: true }),
       ]);
 
-      if (weekRes.data) setWeekEvents(weekRes.data);
+      if (weekRes.data) {
+        setWeekEvents(
+          weekRes.data.map((row) =>
+            withSourceKind(row as Parameters<typeof withSourceKind>[0]),
+          ),
+        );
+      }
       if (upcomingRes.data) setUpcomingEvents(upcomingRes.data);
       if (reviewRes.data) setReviewEvents(reviewRes.data);
       if (calendarRes.data) {
@@ -112,6 +148,29 @@ export function OpsDashboard({
             toCalendarEvent(row as Parameters<typeof toCalendarEvent>[0]),
           ),
         );
+      }
+
+      const sourceIds = [
+        ...new Set(
+          [
+            ...(weekRes.data ?? []).map((row) =>
+              withSourceKind(row as Parameters<typeof withSourceKind>[0]),
+            ),
+            ...(calendarRes.data ?? []).map((row) =>
+              toCalendarEvent(row as Parameters<typeof toCalendarEvent>[0]),
+            ),
+          ]
+            .map((e) => e.source_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+
+      if (sourceIds.length > 0) {
+        const { data: notes } = await supabase
+          .from("item_notes")
+          .select("*")
+          .in("source_id", sourceIds);
+        if (notes) setNotesBySourceId(notesMapFromRows(notes));
       }
     }
 
@@ -139,6 +198,77 @@ export function OpsDashboard({
     () => pickFocus(weekEvents, reviewEvents),
     [weekEvents, reviewEvents],
   );
+
+  function openNote(sourceId: string, title: string) {
+    setNoteTarget({
+      sourceId,
+      title,
+      body: notesBySourceId[sourceId] ?? "",
+    });
+  }
+
+  async function saveNote(sourceId: string, body: string) {
+    const trimmed = body.trim();
+    if (!trimmed) {
+      await clearNote(sourceId);
+      return;
+    }
+
+    setNoteBusy(true);
+    const prev = notesBySourceId;
+    setNotesBySourceId((map) => ({ ...map, [sourceId]: trimmed }));
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setNotesBySourceId(prev);
+      setNoteBusy(false);
+      return;
+    }
+
+    const { error } = await supabase.from("item_notes").upsert(
+      {
+        user_id: user.id,
+        source_id: sourceId,
+        body: trimmed,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "source_id" },
+    );
+
+    if (error) {
+      setNotesBySourceId(prev);
+    } else {
+      setNoteTarget(null);
+    }
+    setNoteBusy(false);
+  }
+
+  async function clearNote(sourceId: string) {
+    setNoteBusy(true);
+    const prev = notesBySourceId;
+    setNotesBySourceId((map) => {
+      const next = { ...map };
+      delete next[sourceId];
+      return next;
+    });
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("item_notes")
+      .delete()
+      .eq("source_id", sourceId);
+
+    if (error) {
+      setNotesBySourceId(prev);
+    } else {
+      setNoteTarget(null);
+    }
+    setNoteBusy(false);
+  }
 
   async function dismiss(id: string) {
     setBusyId(id);
@@ -215,11 +345,17 @@ export function OpsDashboard({
         busy={busyId === focusEvent?.id}
         onDone={(id) => void completeFocus(id)}
       />
-      <OnTheCalendar events={calendarEvents} />
+      <OnTheCalendar
+        events={calendarEvents}
+        notesBySourceId={notesBySourceId}
+        onOpenNote={openNote}
+      />
       <WeekAhead
         events={weekEvents}
         busyId={busyId}
+        notesBySourceId={notesBySourceId}
         onDismiss={(id) => void dismiss(id)}
+        onOpenNote={openNote}
       />
       <UpcomingEvents
         events={upcomingEvents}
@@ -227,6 +363,16 @@ export function OpsDashboard({
         onDismiss={(id) => void dismiss(id)}
       />
       <EmailPanels reviewEvents={reviewEvents} sources={sources} />
+
+      <ItemNoteModal
+        target={noteTarget}
+        busy={noteBusy}
+        onClose={() => {
+          if (!noteBusy) setNoteTarget(null);
+        }}
+        onSave={(sourceId, body) => void saveNote(sourceId, body)}
+        onClear={(sourceId) => void clearNote(sourceId)}
+      />
 
       <div
         className="mt-2 flex h-1.5 overflow-hidden rounded-full"

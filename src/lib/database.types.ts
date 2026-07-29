@@ -71,6 +71,15 @@ export type ScanRun = {
  error: string | null
 }
 
+export type ItemNote = {
+ id: string
+ user_id: string
+ source_id: string
+ body: string
+ created_at: string
+ updated_at: string
+}
+
 export type Database = {
  public: {
   Tables: {
@@ -209,6 +218,26 @@ export type Database = {
      finished_at?: string | null
      stats?: Record<string, unknown>
      error?: string | null
+    }
+    Relationships: []
+   }
+   item_notes: {
+    Row: ItemNote
+    Insert: {
+     id?: string
+     user_id: string
+     source_id: string
+     body?: string
+     created_at?: string
+     updated_at?: string
+    }
+    Update: {
+     id?: string
+     user_id?: string
+     source_id?: string
+     body?: string
+     created_at?: string
+     updated_at?: string
     }
     Relationships: []
    }
