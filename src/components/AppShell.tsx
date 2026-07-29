@@ -11,6 +11,7 @@ const links = [
   { href: "/calendar", label: "Calendar" },
   { href: "/trips", label: "Trips" },
   { href: "/review", label: "Review" },
+  { href: "/search", label: "Search" },
   { href: "/sources", label: "Sources" },
   { href: "/settings", label: "Settings" },
 ];
