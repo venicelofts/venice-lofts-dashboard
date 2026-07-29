@@ -1,17 +1,17 @@
 # Azure configuration
 
-Microsoft Entra ID (Azure) is used for dashboard sign-in and for local Graph mail scanning.
+Microsoft Entra ID (Azure) is used for dashboard sign-in and for Graph mail + calendar scanning.
 
-| Part               | Purpose                                         | Required now?                                       |
-| ------------------ | ----------------------------------------------- | --------------------------------------------------- |
-| **Part 1 — Auth**  | “Sign in with Microsoft” on the dashboard       | **Yes**                                             |
-| **Part 2 — Graph** | Local `pnpm scan` mail read; future server sync | **Yes for email scan**; cron/org sync not built yet |
+| Part               | Purpose                                      | Required now?                   |
+| ------------------ | -------------------------------------------- | ------------------------------- |
+| **Part 1 — Auth**  | “Sign in with Microsoft” on the dashboard    | **Yes**                         |
+| **Part 2 — Graph** | Local `pnpm scan` + secured `/api/sync` cron | **Yes for email/calendar scan** |
 
 ---
 
 ## Part 1 — Dashboard login (required)
 
-Employees and admins sign in with Microsoft via **Supabase Auth**. This does **not** by itself grant the app access to mailboxes (that needs Application `Mail.Read` in Part 2).
+Employees and admins sign in with Microsoft via **Supabase Auth**. This does **not** by itself grant the app access to mailboxes (that needs Application permissions in Part 2).
 
 ### 1. App registration
 
@@ -80,23 +80,28 @@ Open [http://localhost:3000](http://localhost:3000) → **Sign in with Microsoft
 
 ---
 
-## Part 2 — Graph mail (local scan today)
+## Part 2 — Graph mail + calendar
 
-Local `pnpm scan` reads mail via **Microsoft Graph** with **application permissions** (client credentials). IMAP / app passwords are not used.
+Local `pnpm scan` and the server `/api/sync` cron read mail and calendar via **Microsoft Graph** with **application permissions** (client credentials). IMAP / app passwords are not used.
 
 You can add these permissions to the **same** app registration as Part 1, or a dedicated sync app.
 
 | Permission       | Type        | Purpose                         |
 | ---------------- | ----------- | ------------------------------- |
 | `Mail.Read`      | Application | Read org mailboxes for scanning |
-| `Calendars.Read` | Application | Future calendar sync            |
+| `Calendars.Read` | Application | Read Outlook calendar for sync  |
 
-### Setup
+### Grant Calendars.Read (and Mail.Read if missing)
 
-1. Use the same or a **dedicated** app registration
-2. Add **Application** permissions above → **Grant admin consent**
-3. Ensure a client secret exists (Part 1 secret is fine if reusing the same app)
-4. Put in `.env.local`:
+1. Azure Portal → **Microsoft Entra ID** → **App registrations** → your Venice Lofts Graph app
+2. **API permissions** → **Add a permission** → **Microsoft Graph** → **Application permissions**
+3. Add **`Calendars.Read`** (and **`Mail.Read`** if not already present)
+4. Click **Grant admin consent for [your tenant]**
+5. Confirm both Application permissions show a green **Granted** status:
+   - `Mail.Read`
+   - `Calendars.Read`
+6. Ensure a client secret exists (**Certificates & secrets**)
+7. Put in `.env.local` (and Vercel production env for cron):
 
    ```env
    AZURE_TENANT_ID=<directory-tenant-id>
@@ -104,28 +109,45 @@ You can add these permissions to the **same** app registration as Part 1, or a d
    AZURE_CLIENT_SECRET=<client-secret-value>
    GRAPH_MAILBOX=you@yourdomain.com
    SCAN_LOOKBACK_HOURS=48
+   SCAN_CALENDAR_FORWARD_DAYS=90
    ```
 
-5. Optionally restrict mailboxes with an [Exchange Application Access Policy](https://learn.microsoft.com/en-us/graph/auth-limit-mailbox-access)
+8. Optionally restrict mailboxes with an [Exchange Application Access Policy](https://learn.microsoft.com/en-us/graph/auth-limit-mailbox-access) — calendar uses the same mailbox UPN as mail
 
-See [first-scan.md](first-scan.md) to run the scanner.
+**Verify (optional):** after consent, `GET /users/{GRAPH_MAILBOX}/calendarView?startDateTime=...&endDateTime=...` should return 200.
 
-### Still planned (not implemented)
+See [first-scan.md](first-scan.md) to run the local scanner.
 
-- `SYNC_CRON_SECRET` — secures a scheduled sync HTTP endpoint
-- Admin UI to list mailbox UPNs in Settings
-- `organizations` / `organization_members` tables for multi-user ops
-- Server-side cron replacing local `pnpm scan`
+### Scheduled server sync (`/api/sync`)
+
+1. Generate a secret: `openssl rand -hex 32`
+2. Set `SYNC_CRON_SECRET` in Vercel (and `.env.local` for local testing)
+3. Also set on the server: `AZURE_*`, `GRAPH_MAILBOX`, `SCAN_USER_ID`, Supabase keys, `ANTHROPIC_API_KEY` (mail extraction)
+4. Vercel Cron (see `vercel.json`) hits `/api/sync` daily. Set **`CRON_SECRET`** to the same value as `SYNC_CRON_SECRET` so Vercel’s automatic `Authorization: Bearer` header is accepted, or call manually with:
+
+   ```
+   Authorization: Bearer <SYNC_CRON_SECRET>
+   ```
+
+5. Manual test:
+
+   ```bash
+   curl -X POST https://your-app.vercel.app/api/sync \
+     -H "Authorization: Bearer $SYNC_CRON_SECRET"
+   ```
+
+The cron runs Graph **mail + calendar** only (not local PDF folders).
 
 ---
 
-## How Azure relates to local scanning
+## How Azure relates to scanning
 
-| Mechanism                          | Used for                                     |
-| ---------------------------------- | -------------------------------------------- |
-| Azure app + Supabase Auth provider | Dashboard login (delegated)                  |
-| `AZURE_*` + `GRAPH_MAILBOX`        | **Today’s** email scan on your Mac via Graph |
-| `SCAN_FOLDERS`                     | Optional PDF scan (no Graph needed)          |
+| Mechanism                          | Used for                                          |
+| ---------------------------------- | ------------------------------------------------- |
+| Azure app + Supabase Auth provider | Dashboard login (delegated)                       |
+| `AZURE_*` + `GRAPH_MAILBOX`        | Email + calendar scan (local CLI and `/api/sync`) |
+| `SCAN_FOLDERS`                     | Optional PDF scan on Mac only (no Graph needed)   |
+| `SYNC_CRON_SECRET`                 | Authorizes `POST /api/sync`                       |
 
 ---
 
@@ -140,14 +162,14 @@ See [first-scan.md](first-scan.md) to run the scanner.
 - [ ] `http://localhost:3000/auth/callback` in Supabase redirect URLs
 - [ ] Sign-in works at localhost
 
-**Email scan (Graph)**
+**Email + calendar scan (Graph)**
 
-- [ ] Application `Mail.Read` (+ optional `Calendars.Read`) + admin consent
-- [ ] `AZURE_*`, `GRAPH_MAILBOX`, and `SCAN_LOOKBACK_HOURS` in `.env.local`
+- [ ] Application `Mail.Read` + `Calendars.Read` + admin consent
+- [ ] `AZURE_*`, `GRAPH_MAILBOX`, `SCAN_LOOKBACK_HOURS`, `SCAN_CALENDAR_FORWARD_DAYS` in `.env.local`
 - [ ] Optional: Exchange Application Access Policy limited to that mailbox
-- [ ] `pnpm scan` succeeds
+- [ ] `pnpm scan` succeeds; Calendar tab shows Outlook events
 
-**Later (server sync)**
+**Server sync**
 
-- [ ] `SYNC_CRON_SECRET` in server env
-- [ ] Cron hitting secured sync route
+- [ ] `SYNC_CRON_SECRET` + Graph/scan env on Vercel
+- [ ] Cron hitting `POST /api/sync` with Bearer secret

@@ -17,7 +17,7 @@ export function createServiceClient() {
 
 type UpsertSourceInput = {
  userId: string
- kind: 'email' | 'file'
+ kind: 'email' | 'file' | 'calendar'
  externalId?: string | null
  contentHash?: string | null
  pathOrSubject?: string | null

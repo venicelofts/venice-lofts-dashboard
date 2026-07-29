@@ -1,6 +1,19 @@
-import { endOfWeek, format, isValid, parseISO, startOfDay } from "date-fns";
+import {
+  addDays,
+  endOfDay,
+  endOfWeek,
+  format,
+  isValid,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 import { AppShell } from "@/components/AppShell";
 import { OpsDashboard } from "@/components/dashboard/OpsDashboard";
+import {
+  CALENDAR_EVENT_SELECT,
+  toCalendarEvent,
+  type CalendarEvent,
+} from "@/lib/calendar/types";
 import { createClient } from "@/lib/supabase/server";
 
 function formatLastSynced(finishedAt: string | null | undefined, hasRun: boolean) {
@@ -20,11 +33,14 @@ export default async function TodayPage() {
 
   const from = startOfDay(new Date()).toISOString();
   const to = endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
+  const calendarFrom = from;
+  const calendarTo = endOfDay(addDays(new Date(), 2)).toISOString();
 
   const [
     { data: weekEvents },
     { data: upcomingEvents },
     { data: reviewEvents },
+    { data: calendarRows },
     { data: sources },
     { data: lastRun },
   ] = await Promise.all([
@@ -46,6 +62,13 @@ export default async function TodayPage() {
       .order("created_at", { ascending: false })
       .limit(8),
     supabase
+      .from("events")
+      .select(CALENDAR_EVENT_SELECT)
+      .eq("sources.kind", "calendar")
+      .gte("starts_at", calendarFrom)
+      .lte("starts_at", calendarTo)
+      .order("starts_at", { ascending: true }),
+    supabase
       .from("sources")
       .select("*")
       .eq("kind", "email")
@@ -59,6 +82,10 @@ export default async function TodayPage() {
       .maybeSingle(),
   ]);
 
+  const calendarEvents: CalendarEvent[] = (calendarRows ?? []).map((row) =>
+    toCalendarEvent(row as Parameters<typeof toCalendarEvent>[0]),
+  );
+
   return (
     <AppShell
       email={user.email}
@@ -68,9 +95,12 @@ export default async function TodayPage() {
         initialWeekEvents={weekEvents ?? []}
         initialUpcomingEvents={upcomingEvents ?? []}
         initialReviewEvents={reviewEvents ?? []}
+        initialCalendarEvents={calendarEvents}
         sources={sources ?? []}
         from={from}
         to={to}
+        calendarFrom={calendarFrom}
+        calendarTo={calendarTo}
       />
     </AppShell>
   );

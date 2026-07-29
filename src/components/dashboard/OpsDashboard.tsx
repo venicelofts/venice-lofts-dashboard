@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { ItineraryEvent, Source } from "@/lib/database.types";
+import {
+  CALENDAR_EVENT_SELECT,
+  toCalendarEvent,
+  type CalendarEvent,
+} from "@/lib/calendar/types";
 import { FocusNow } from "@/components/dashboard/FocusNow";
+import { OnTheCalendar } from "@/components/dashboard/OnTheCalendar";
 import { WeekAhead } from "@/components/dashboard/WeekAhead";
 import { UpcomingEvents } from "@/components/dashboard/UpcomingEvents";
 import { EmailPanels } from "@/components/dashboard/EmailPanels";
@@ -18,33 +24,59 @@ export function OpsDashboard({
   initialWeekEvents,
   initialUpcomingEvents,
   initialReviewEvents,
+  initialCalendarEvents,
   sources,
   from,
   to,
+  calendarFrom,
+  calendarTo,
 }: {
   initialWeekEvents: ItineraryEvent[];
   initialUpcomingEvents: ItineraryEvent[];
   initialReviewEvents: ItineraryEvent[];
+  initialCalendarEvents: CalendarEvent[];
   sources: Source[];
   from: string;
   to: string;
+  calendarFrom: string;
+  calendarTo: string;
 }) {
   const [weekEvents, setWeekEvents] = useState(initialWeekEvents);
   const [upcomingEvents, setUpcomingEvents] = useState(initialUpcomingEvents);
   const [reviewEvents, setReviewEvents] = useState(initialReviewEvents);
+  const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [propStamp, setPropStamp] = useState(() => ({
+    week: initialWeekEvents,
+    upcoming: initialUpcomingEvents,
+    review: initialReviewEvents,
+    calendar: initialCalendarEvents,
+  }));
+
+  if (
+    propStamp.week !== initialWeekEvents ||
+    propStamp.upcoming !== initialUpcomingEvents ||
+    propStamp.review !== initialReviewEvents ||
+    propStamp.calendar !== initialCalendarEvents
+  ) {
+    setPropStamp({
+      week: initialWeekEvents,
+      upcoming: initialUpcomingEvents,
+      review: initialReviewEvents,
+      calendar: initialCalendarEvents,
+    });
     setWeekEvents(initialWeekEvents);
     setUpcomingEvents(initialUpcomingEvents);
     setReviewEvents(initialReviewEvents);
-  }, [initialWeekEvents, initialUpcomingEvents, initialReviewEvents]);
+    setCalendarEvents(initialCalendarEvents);
+  }
 
   useEffect(() => {
     const supabase = createClient();
 
     async function refetch() {
-      const [weekRes, upcomingRes, reviewRes] = await Promise.all([
+      const [weekRes, upcomingRes, reviewRes, calendarRes] = await Promise.all([
         supabase
           .from("events")
           .select("*")
@@ -62,11 +94,25 @@ export function OpsDashboard({
           .eq("needs_review", true)
           .order("created_at", { ascending: false })
           .limit(8),
+        supabase
+          .from("events")
+          .select(CALENDAR_EVENT_SELECT)
+          .eq("sources.kind", "calendar")
+          .gte("starts_at", calendarFrom)
+          .lte("starts_at", calendarTo)
+          .order("starts_at", { ascending: true }),
       ]);
 
       if (weekRes.data) setWeekEvents(weekRes.data);
       if (upcomingRes.data) setUpcomingEvents(upcomingRes.data);
       if (reviewRes.data) setReviewEvents(reviewRes.data);
+      if (calendarRes.data) {
+        setCalendarEvents(
+          calendarRes.data.map((row) =>
+            toCalendarEvent(row as Parameters<typeof toCalendarEvent>[0]),
+          ),
+        );
+      }
     }
 
     const channel = supabase
@@ -87,7 +133,7 @@ export function OpsDashboard({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [from, to]);
+  }, [from, to, calendarFrom, calendarTo]);
 
   const focusEvent = useMemo(
     () => pickFocus(weekEvents, reviewEvents),
@@ -99,10 +145,12 @@ export function OpsDashboard({
     const prevWeek = weekEvents;
     const prevUpcoming = upcomingEvents;
     const prevReview = reviewEvents;
+    const prevCalendar = calendarEvents;
 
     setWeekEvents((prev) => prev.filter((event) => event.id !== id));
     setUpcomingEvents((prev) => prev.filter((event) => event.id !== id));
     setReviewEvents((prev) => prev.filter((event) => event.id !== id));
+    setCalendarEvents((prev) => prev.filter((event) => event.id !== id));
 
     const supabase = createClient();
     const { error } = await supabase.from("events").delete().eq("id", id);
@@ -110,6 +158,7 @@ export function OpsDashboard({
       setWeekEvents(prevWeek);
       setUpcomingEvents(prevUpcoming);
       setReviewEvents(prevReview);
+      setCalendarEvents(prevCalendar);
     }
     setBusyId(null);
   }
@@ -166,6 +215,7 @@ export function OpsDashboard({
         busy={busyId === focusEvent?.id}
         onDone={(id) => void completeFocus(id)}
       />
+      <OnTheCalendar events={calendarEvents} />
       <WeekAhead
         events={weekEvents}
         busyId={busyId}

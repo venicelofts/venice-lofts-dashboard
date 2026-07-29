@@ -101,19 +101,22 @@ Scanning folders: ...
 Folder scan: { filesSeen, filesProcessed, eventsCreated, ... }
 Scanning mailbox via Microsoft Graph…
 Email scan: { messagesSeen, messagesProcessed, eventsCreated, ... }
+Scanning Outlook calendar via Microsoft Graph…
+Calendar scan: { eventsSeen, eventsUpserted, eventsRemoved, ... }
 Scan complete.
 ```
 
 ### Common errors
 
-| Error                                   | Fix                                                    |
-| --------------------------------------- | ------------------------------------------------------ |
-| `SCAN_USER_ID is required`              | Set from Settings (step 2)                             |
-| `ANTHROPIC_API_KEY is not set`          | Add key (step 3)                                       |
-| `Failed to create scan_runs row`        | Run database migration                                 |
-| `Missing ... SUPABASE_SERVICE_ROLE_KEY` | Check Supabase vars in `.env.local`                    |
-| Graph token / mail request failed       | Check `AZURE_*`, `Mail.Read` + admin consent, mailbox  |
-| `eventsCreated: 0`                      | Normal if no matching mail/PDFs in the lookback window |
+| Error                                   | Fix                                                          |
+| --------------------------------------- | ------------------------------------------------------------ |
+| `SCAN_USER_ID is required`              | Set from Settings (step 2)                                   |
+| `ANTHROPIC_API_KEY is not set`          | Add key (step 3)                                             |
+| `Failed to create scan_runs row`        | Run database migration                                       |
+| `Missing ... SUPABASE_SERVICE_ROLE_KEY` | Check Supabase vars in `.env.local`                          |
+| Graph token / mail request failed       | Check `AZURE_*`, `Mail.Read` + admin consent, mailbox        |
+| Graph calendar request failed           | Check `Calendars.Read` + admin consent on the same Entra app |
+| `eventsCreated: 0`                      | Normal if no matching mail/PDFs in the lookback window       |
 
 Graph failures print on separate lines with the failing step and the API error text when available.
 
@@ -123,13 +126,14 @@ Graph failures print on separate lines with the failing step and the API error t
 
 With `pnpm dev` running:
 
-| Page                                       | What to check                   |
-| ------------------------------------------ | ------------------------------- |
-| [Today](http://localhost:3000/)            | Events; “Last scan” timestamp   |
-| [Review](http://localhost:3000/review)     | Low-confidence items to confirm |
-| [Sources](http://localhost:3000/sources)   | Ingested emails and files       |
-| [Settings](http://localhost:3000/settings) | Scan run history (ok / error)   |
-| [Trips](http://localhost:3000/trips)       | Trip groupings when extracted   |
+| Page                                       | What to check                                      |
+| ------------------------------------------ | -------------------------------------------------- |
+| [Today](http://localhost:3000/)            | Events; “On the calendar”; “Last synced” timestamp |
+| [Calendar](http://localhost:3000/calendar) | Month grid of Outlook-synced events                |
+| [Review](http://localhost:3000/review)     | Low-confidence items to confirm                    |
+| [Sources](http://localhost:3000/sources)   | Ingested emails and files                          |
+| [Settings](http://localhost:3000/settings) | Scan run history (ok / error)                      |
+| [Trips](http://localhost:3000/trips)       | Trip groupings when extracted                      |
 
 Today uses Supabase Realtime — events may appear without a full page refresh.
 
@@ -152,15 +156,14 @@ Edit [`launchd/com.venicelofts.scan.plist`](../launchd/com.venicelofts.scan.plis
 - [ ] Migration applied
 - [ ] `SCAN_USER_ID` from Settings
 - [ ] `ANTHROPIC_API_KEY` set
-- [ ] Graph mail (`AZURE_*` + `GRAPH_MAILBOX`) **or** `SCAN_FOLDERS` configured
-- [ ] Application `Mail.Read` + admin consent (if using email)
+- [ ] Graph mail/calendar (`AZURE_*` + `GRAPH_MAILBOX`) **or** `SCAN_FOLDERS` configured
+- [ ] Application `Mail.Read` + `Calendars.Read` + admin consent (if using Graph)
 - [ ] `pnpm scan` → `Scan complete.`
-- [ ] Today / Sources show data
+- [ ] Today / Calendar / Sources show data
 
 ---
 
-## Not used for scanning (yet)
+## Server sync (production)
 
-- `SYNC_CRON_SECRET` — future scheduled server sync endpoint
-
-See [azure.md](azure.md) Part 2 for cron / org-wide sync (not built yet).
+Set `SYNC_CRON_SECRET` on Vercel and allow cron to `POST /api/sync` with
+`Authorization: Bearer <secret>`. See [azure.md](azure.md) Part 2.

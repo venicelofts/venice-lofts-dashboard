@@ -6,7 +6,7 @@ export type EventCategory =
  | 'travel'
  | 'other'
 
-export type SourceKind = 'email' | 'file'
+export type SourceKind = 'email' | 'file' | 'calendar'
 
 export type Profile = {
  id: string
