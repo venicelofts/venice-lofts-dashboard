@@ -6,6 +6,8 @@ import {
   ListPagination,
   NoteButton,
   SourceKindBadge,
+  StarButton,
+  importantRowClass,
   useListPage,
 } from "@/components/dashboard/ListControls";
 import type { DashboardListEvent } from "@/components/dashboard/listShared";
@@ -26,12 +28,14 @@ export function WeekAhead({
   notesBySourceId = {},
   onDismiss,
   onOpenNote,
+  onToggleImportant,
 }: {
   events: DashboardListEvent[];
   busyId?: string | null;
   notesBySourceId?: Record<string, string>;
   onDismiss?: (id: string) => void;
   onOpenNote?: (sourceId: string, title: string) => void;
+  onToggleImportant?: (id: string, important: boolean) => void;
 }) {
   const router = useRouter();
   const { page, totalPages, setPage, slice } = useListPage(events.length);
@@ -73,7 +77,7 @@ export function WeekAhead({
               return (
                 <li
                   key={event.id}
-                  className={`group flex flex-wrap items-start gap-3 py-3.5 md:gap-5 ${needsReview ? "cursor-pointer" : ""
+                  className={`group flex flex-wrap items-start gap-3 py-3.5 md:gap-5 ${importantRowClass(event.is_important)} ${needsReview ? "cursor-pointer" : ""
                     }`}
                   role={needsReview ? "link" : undefined}
                   tabIndex={needsReview ? 0 : undefined}
@@ -93,7 +97,10 @@ export function WeekAhead({
                       : undefined
                   }
                 >
-                  <div className="flex min-w-[9.5rem] shrink-0 items-baseline gap-2 pt-0.5">
+                  <div
+                    className={`flex min-w-[9.5rem] shrink-0 items-baseline gap-2 pt-0.5 ${event.is_important ? "pl-2" : ""
+                      }`}
+                  >
                     <span className="rounded-md bg-[var(--gold-soft)] px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide text-[var(--text)]">
                       {when.day}
                     </span>
@@ -127,6 +134,15 @@ export function WeekAhead({
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
+                    {onToggleImportant ? (
+                      <StarButton
+                        important={event.is_important}
+                        disabled={busyId === event.id}
+                        onClick={() =>
+                          onToggleImportant(event.id, !event.is_important)
+                        }
+                      />
+                    ) : null}
                     {event.source_id && onOpenNote ? (
                       <NoteButton
                         hasNote={hasNote}

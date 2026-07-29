@@ -74,6 +74,60 @@ export function NoteButton({
   );
 }
 
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9 6.7 19.6l1-5.8-4.2-4.1 5.9-.9L12 3.5z" />
+    </svg>
+  );
+}
+
+export function StarButton({
+  important,
+  disabled = false,
+  onClick,
+}: {
+  important: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={important ? "Remove from Important" : "Mark as Important"}
+      aria-pressed={important}
+      title={important ? "Remove from Important" : "Mark as Important"}
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={`inline-flex items-center justify-center rounded-md p-1.5 transition-colors hover:bg-[var(--bg-soft)] disabled:opacity-40 ${important
+          ? "text-[var(--gold)] hover:text-[#a88235]"
+          : "text-[var(--text-faint)] hover:text-[var(--gold)]"
+        }`}
+    >
+      <StarIcon filled={important} />
+    </button>
+  );
+}
+
+export function importantRowClass(important: boolean) {
+  return important
+    ? "relative bg-[color-mix(in_srgb,var(--gold-soft)_45%,transparent)] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[var(--gold)]"
+    : "";
+}
+
 function OutlookIcon() {
   return (
     <svg

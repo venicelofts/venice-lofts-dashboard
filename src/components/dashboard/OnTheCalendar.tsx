@@ -7,6 +7,8 @@ import {
   ListPagination,
   NoteButton,
   OutlookButton,
+  StarButton,
+  importantRowClass,
   useListPage,
 } from "@/components/dashboard/ListControls";
 
@@ -20,12 +22,16 @@ function timeLabel(event: CalendarEvent) {
 
 export function OnTheCalendar({
   events,
+  busyId = null,
   notesBySourceId = {},
   onOpenNote,
+  onToggleImportant,
 }: {
   events: CalendarEvent[];
+  busyId?: string | null;
   notesBySourceId?: Record<string, string>;
   onOpenNote?: (sourceId: string, title: string) => void;
+  onToggleImportant?: (id: string, important: boolean) => void;
 }) {
   const { page, totalPages, setPage, slice } = useListPage(events.length);
   const pageEvents = slice(events);
@@ -58,9 +64,12 @@ export function OnTheCalendar({
           return (
             <li
               key={event.id}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3"
+              className={`flex flex-wrap items-center gap-x-4 gap-y-2 py-3 ${importantRowClass(event.is_important)}`}
             >
-              <span className="min-w-[7.5rem] shrink-0 text-xs font-semibold tracking-wide text-[var(--text-faint)] uppercase">
+              <span
+                className={`min-w-[7.5rem] shrink-0 text-xs font-semibold tracking-wide text-[var(--text-faint)] uppercase ${event.is_important ? "pl-2" : ""
+                  }`}
+              >
                 {timeLabel(event)}
               </span>
               <div className="min-w-0 flex-1">
@@ -79,6 +88,15 @@ export function OnTheCalendar({
                 ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                {onToggleImportant ? (
+                  <StarButton
+                    important={event.is_important}
+                    disabled={busyId === event.id}
+                    onClick={() =>
+                      onToggleImportant(event.id, !event.is_important)
+                    }
+                  />
+                ) : null}
                 {event.source_id && onOpenNote ? (
                   <NoteButton
                     hasNote={hasNote}

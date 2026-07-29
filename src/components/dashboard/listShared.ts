@@ -33,6 +33,7 @@ export function withSourceKind(
   confidence: row.confidence,
   excerpt: row.excerpt,
   needs_review: row.needs_review,
+  is_important: Boolean(row.is_important),
   cleared_at: row.cleared_at,
   created_at: row.created_at,
   updated_at: row.updated_at,

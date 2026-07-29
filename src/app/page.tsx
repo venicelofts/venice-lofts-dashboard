@@ -42,6 +42,7 @@ export default async function TodayPage() {
     { data: upcomingEvents },
     { data: reviewEvents },
     { data: calendarRows },
+    { data: importantRows },
     { data: sources },
     { data: lastRun },
   ] = await Promise.all([
@@ -70,6 +71,11 @@ export default async function TodayPage() {
       .lte("starts_at", calendarTo)
       .order("starts_at", { ascending: true }),
     supabase
+      .from("events")
+      .select("*, sources(kind)")
+      .eq("is_important", true)
+      .order("starts_at", { ascending: true, nullsFirst: false }),
+    supabase
       .from("sources")
       .select("*")
       .eq("kind", "email")
@@ -91,9 +97,13 @@ export default async function TodayPage() {
     withSourceKind(row as Parameters<typeof withSourceKind>[0]),
   );
 
+  const importantEvents = (importantRows ?? []).map((row) =>
+    withSourceKind(row as Parameters<typeof withSourceKind>[0]),
+  );
+
   const sourceIds = [
     ...new Set(
-      [...weekListEvents, ...calendarEvents]
+      [...weekListEvents, ...calendarEvents, ...importantEvents]
         .map((e) => e.source_id)
         .filter((id): id is string => Boolean(id)),
     ),
@@ -114,6 +124,7 @@ export default async function TodayPage() {
         initialUpcomingEvents={upcomingEvents ?? []}
         initialReviewEvents={reviewEvents ?? []}
         initialCalendarEvents={calendarEvents}
+        initialImportantEvents={importantEvents}
         initialNotes={notes ?? []}
         sources={sources ?? []}
         from={from}

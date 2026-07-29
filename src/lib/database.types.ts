@@ -57,6 +57,7 @@ export type ItineraryEvent = {
  confidence: number
  excerpt: string | null
  needs_review: boolean
+ is_important: boolean
  cleared_at: string | null
  created_at: string
  updated_at: string
@@ -178,6 +179,7 @@ export type Database = {
      confidence?: number
      excerpt?: string | null
      needs_review?: boolean
+     is_important?: boolean
      cleared_at?: string | null
      created_at?: string
      updated_at?: string
@@ -195,6 +197,7 @@ export type Database = {
      confidence?: number
      excerpt?: string | null
      needs_review?: boolean
+     is_important?: boolean
      cleared_at?: string | null
      created_at?: string
      updated_at?: string

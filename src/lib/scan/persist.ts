@@ -104,21 +104,35 @@ export async function upsertExtraction(
   tripId = trip.id
  }
 
- const rows = extraction.events.map((event) => ({
-  user_id: userId,
-  source_id: sourceId!,
-  trip_id: tripId,
-  title: event.title,
-  starts_at: event.starts_at ?? null,
-  ends_at: event.ends_at ?? null,
-  location: event.location ?? null,
-  category: event.category,
-  confidence: event.confidence,
-  excerpt: event.excerpt ?? null,
-  needs_review: event.confidence < 0.6,
- }))
+ if (extraction.events.length > 0) {
+  // Preserve importance flags across re-scan replace
+  const { data: priorEvents } = await supabase
+   .from('events')
+   .select('title, starts_at, is_important')
+   .eq('source_id', sourceId)
+   .eq('user_id', userId)
 
- if (rows.length > 0) {
+  const importantKeys = new Set(
+   (priorEvents ?? [])
+    .filter((row) => row.is_important)
+    .map((row) => `${row.title}\0${row.starts_at ?? ''}`),
+  )
+
+  const rows = extraction.events.map((event) => ({
+   user_id: userId,
+   source_id: sourceId!,
+   trip_id: tripId,
+   title: event.title,
+   starts_at: event.starts_at ?? null,
+   ends_at: event.ends_at ?? null,
+   location: event.location ?? null,
+   category: event.category,
+   confidence: event.confidence,
+   excerpt: event.excerpt ?? null,
+   needs_review: event.confidence < 0.6,
+   is_important: importantKeys.has(`${event.title}\0${event.starts_at ?? ''}`),
+  }))
+
   // Replace prior events for this source on re-scan
   await supabase
    .from('events')
@@ -127,7 +141,9 @@ export async function upsertExtraction(
    .eq('user_id', userId)
   const { error } = await supabase.from('events').insert(rows)
   if (error) throw error
+
+  return { sourceId, eventCount: rows.length, tripId }
  }
 
- return { sourceId, eventCount: rows.length, tripId }
+ return { sourceId, eventCount: 0, tripId }
 }

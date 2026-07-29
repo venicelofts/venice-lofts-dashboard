@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { GetItDoneFocus } from "@/components/GetItDoneFocus";
+import { ImportantFocus } from "@/components/ImportantFocus";
 import { RecapTheDay } from "@/components/RecapTheDay";
 import { createClient } from "@/lib/supabase/client";
 
@@ -84,6 +85,7 @@ export function AppShell({
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
               <GetItDoneFocus />
+              <ImportantFocus />
               <RecapTheDay />
               <button
                 type="button"
