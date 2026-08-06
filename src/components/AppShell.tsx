@@ -84,9 +84,9 @@ export function AppShell({
               </p>
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
-              <GetItDoneFocus />
-              <ImportantFocus />
-              <RecapTheDay />
+              {/* <GetItDoneFocus /> */}
+              {/* <ImportantFocus /> */}
+              {/* <RecapTheDay /> */}
               <button
                 type="button"
                 onClick={signOut}
@@ -101,7 +101,7 @@ export function AppShell({
         </div>
 
         <nav className="flex flex-wrap gap-1.5" aria-label="Primary">
-          {links.map((link) => {
+          {/* {links.map((link) => {
             const active =
               link.href === "/"
                 ? pathname === "/"
@@ -118,7 +118,7 @@ export function AppShell({
                 {link.label}
               </Link>
             );
-          })}
+          })} */}
         </nav>
       </header>
 

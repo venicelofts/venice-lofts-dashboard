@@ -119,7 +119,7 @@ export default async function TodayPage() {
       email={user.email}
       lastSyncedLabel={formatLastSynced(lastRun?.finished_at, Boolean(lastRun))}
     >
-      <OpsDashboard
+      {/* <OpsDashboard
         initialWeekEvents={weekListEvents}
         initialUpcomingEvents={upcomingEvents ?? []}
         initialReviewEvents={reviewEvents ?? []}
@@ -131,7 +131,10 @@ export default async function TodayPage() {
         to={to}
         calendarFrom={calendarFrom}
         calendarTo={calendarTo}
-      />
+      /> */}
+      <div>
+        <h1>Due to lack of consideration for the developers time, this project has been abandoned</h1>
+      </div>
     </AppShell>
   );
 }
